@@ -18,21 +18,24 @@ export default function StudentDashboard() {
       title: "Cấu trúc dữ liệu & Giải thuật",
       rating: 4.8,
       progress: 45,
-      image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=400&auto=format&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=400&auto=format&fit=crop",
     },
     {
       id: 2,
       title: "Thiết kế hệ thống",
       rating: 5.0,
       progress: 12,
-      image: "https://images.unsplash.com/photo-1511376777868-611b54f68947?q=80&w=400&auto=format&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1511376777868-611b54f68947?q=80&w=400&auto=format&fit=crop",
     },
     {
       id: 3,
       title: "JavaScript Fundamentals",
       rating: 3.9,
       progress: 100,
-      image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=400&auto=format&fit=crop",
+      image:
+        "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=400&auto=format&fit=crop",
     },
   ];
 
@@ -62,22 +65,25 @@ export default function StudentDashboard() {
   ];
 
   return (
-    <div className="min-vh-100 text-dark font-sans w-100 m-0 p-0 position-relative" style={{ backgroundColor: "#f7f9fb" }}>
-      
+    <div
+      className="min-vh-100 text-dark font-sans w-100 m-0 p-0 position-relative"
+      style={{ backgroundColor: "#f7f9fb" }}
+    >
       {/* Top Navbar */}
       <Navbar />
 
       {/* Main Layout */}
       <div className="container-fluid pt-5 mt-4 px-0">
         <div className="row g-0 w-100 m-0">
-          
           {/* Sidebar Left */}
           <Sidebar />
 
           {/* Main Content Area */}
-          <main className="col-12 col-md-9 col-xl-10 p-3 p-md-4 bg-light" style={{ backgroundColor: "#f7f9fb" }}>
+          <main
+            className="col-12 col-md-9 col-xl-10 p-3 p-md-4 bg-light"
+            style={{ backgroundColor: "#f7f9fb" }}
+          >
             <div className="w-100">
-              
               <WelcomeBanner name="Alex" />
 
               <LearningProgress />
@@ -100,10 +106,22 @@ export default function StudentDashboard() {
                 <div className="d-flex justify-content-between align-items-center mb-4">
                   <h4 className="fw-bold m-0 position-relative d-inline-block text-dark">
                     Khóa học của tôi
-                    <span className="position-absolute bottom-0 start-0 bg-primary rounded-pill" style={{ height: "4px", width: "35px", bottom: "-6px", backgroundColor: "#3525cd" }}></span>
+                    <span
+                      className="position-absolute bottom-0 start-0 bg-primary rounded-pill"
+                      style={{
+                        height: "4px",
+                        width: "35px",
+                        bottom: "-6px",
+                        backgroundColor: "#3525cd",
+                      }}
+                    ></span>
                   </h4>
                   <button className="btn btn-link text-primary p-0 fw-bold d-flex align-items-center gap-1 text-decoration-none small hover-translate-x">
-                    Xem tất cả <i className="fa-solid fa-arrow-right" style={{ fontSize: "12px" }}></i>
+                    Xem tất cả{" "}
+                    <i
+                      className="fa-solid fa-arrow-right"
+                      style={{ fontSize: "12px" }}
+                    ></i>
                   </button>
                 </div>
 
@@ -113,7 +131,6 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </section>
-
             </div>
           </main>
         </div>
