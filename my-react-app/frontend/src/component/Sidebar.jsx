@@ -1,4 +1,4 @@
-export default function sideBar(){
+export default function sideBar({onLogout}){
     return(
         <aside
       className="col-12 col-md-3 col-xl-2 d-flex flex-column border-end bg-white p-3 gap-2 pt-4 position-sticky"
