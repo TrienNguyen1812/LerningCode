@@ -1,12 +1,12 @@
-import StudentDashboard from './pages/StudentDashboard'
-import './App.css'
+// File: src/App.jsx
+import StudentDashboard from "./pages/StudentDashboard";
 
 function App() {
   return (
     <>
-      <StudentDashboard />
+      <StudentDashboard/>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
