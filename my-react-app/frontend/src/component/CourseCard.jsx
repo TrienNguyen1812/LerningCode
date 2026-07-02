@@ -1,4 +1,7 @@
 export default function CourseCard({ course }) {
+  // Đường link ảnh mặc định chủ đề lập trình/công nghệ cực đẹp nếu DB chưa có ảnh
+  const defaultCourseImage = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=600&auto=format&fit=crop";
+
   return (
     // Đã xóa thẻ <div className="col-12 col-md-6 col-lg-4"> ở ngoài cùng
     // Thẻ ngoài cùng giờ đây bắt đầu trực tiếp bằng khối .card
@@ -7,7 +10,7 @@ export default function CourseCard({ course }) {
       {/* Khung ảnh khóa học */}
       <div className="ratio ratio-16x9 overflow-hidden position-relative img-wrapper">
         <img 
-          src={course.image} 
+          src={course.image || defaultCourseImage} // Nếu không có ảnh từ DB, tự động lấy ảnh mặc định
           alt={course.title} 
           className="w-100 h-100 course-card-img" 
           style={{ objectFit: "cover" }} // Ép cứng style để đảm bảo ảnh luôn cắt cúp chuẩn, không méo
@@ -26,17 +29,7 @@ export default function CourseCard({ course }) {
             {course.title}
           </h5>
 
-          {/* Đánh giá Sao */}
-          <div className="d-flex align-items-center gap-1 mb-3 text-warning font-awesome-stars" style={{ fontSize: "13px" }}>
-            <i className="fa-solid fa-star"></i>
-            <i className="fa-solid fa-star"></i>
-            <i className="fa-solid fa-star"></i>
-            <i className="fa-solid fa-star"></i>
-            <i className={course.rating >= 5 ? "fa-solid fa-star" : "fa-solid fa-star-half-stroke"}></i>
-            <span className="text-dark fw-bold ms-2" style={{ fontSize: "13px" }}>
-              {course.rating.toFixed(1)}
-            </span>
-          </div>
+          {/* ĐÃ XÓA TOÀN BỘ KHỐI ĐÁNH GIÁ SAO (RATING) TẠI ĐÂY ĐỂ TRÁNH LỖI CRASH */}
         </div>
 
         {/* Thanh tiến độ */}

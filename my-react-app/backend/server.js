@@ -1,43 +1,28 @@
 const express = require("express");
-const sql = require("mssql/msnodesqlv8"); // Dùng driver cho Windows Auth
 const cors = require("cors");
 require("dotenv").config();
 
+// Khởi tạo ứng dụng Express
 const app = express();
+
+// Cấu hình Middleware hệ thống
 app.use(express.json());
-app.use(cors()); // Cho phép ReactJS kết nối sau này
+app.use(cors());
 
-// Cấu hình kết nối SQL Server bằng Windows Authentication
-const dbConfig = {
-  connectionString:
-    "Driver={ODBC Driver 18 for SQL Server};Server=DESKTOP-PFUNCTL\\SQLEXPRESS;Database=DevLearnerDB;Trusted_Connection=yes;TrustServerCertificate=yes;",
-  options: {
-    trustServerCertificate: true,
-  },
-};
+// Nhập (Import) các module định tuyến API
+const authRoutes = require("./src/routes/auth");
+const adminRoutes = require("./src/routes/admin");
+const studentRoutes = require("./src/routes/student");
+const problemRoutes = require("./src/routes/judge"); // Tuyến đường compiler chuyên biệt
 
-// API Test: Thử nghiệm kết nối và lấy dữ liệu
-app.get("/api/test-db", async (req, res) => {
-  try {
-    let pool = await sql.connect(dbConfig);
-    // Thay 'TenBangCuaBan' bằng một bảng bất kỳ đã có dữ liệu trong DB của bạn
-    let result = await pool.request().query("SELECT TOP 5 * FROM Users");
+// Đăng ký sử dụng các Routes với tiền tố prefix chuẩn RESTful
+app.use("/api/auth", authRoutes);       // Ví dụ: /api/auth/login
+app.use("/api/admin", adminRoutes);     // Ví dụ: /api/admin/dashboard
+app.use("/api/students", studentRoutes); // Ví dụ: /api/students/:id/dashboard, /api/students/courses/:idCourse/details
+app.use("/api/judges", problemRoutes);   // Ví dụ: /api/judges/execute
 
-    res.json({
-      success: true,
-      message: "Kết nối SQL Server thành công bằng Windows Auth!",
-      data: result.recordset,
-    });
-  } catch (err) {
-    res.status(500).json({
-      success: false,
-      message: "Lỗi kết nối ",
-      error: err.message,
-    });
-  }
-});
-
-const PORT = 5000;
+// Khởi chạy máy chủ
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server Node.js đang chạy tại: http://localhost:${PORT}`);
+  console.log(`🚀 Hệ thống DevLearner Backend đang chạy tại http://localhost:${PORT}`);
 });

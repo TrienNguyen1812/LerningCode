@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 
@@ -13,41 +13,52 @@ import CourseCard from "../component/CourseCard";
 import CourseDetailPage from "./CourseDetailPage"; 
 import ProblemWorkspacePage from "./ProblemWorkspace"; 
 
-export default function StudentDashboard() {
+// 1. Nhận currentUser và onLogout từ App.jsx truyền xuống
+export default function StudentDashboard({ currentUser, onLogout }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
 
-  // Dữ liệu mẫu danh sách khóa học
-  const myCourses = [
-    {
-      id: 1,
-      title: "Cấu trúc dữ liệu & Giải thuật",
-      rating: 4.8,
-      progress: 45,
-      image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=400&auto=format&fit=crop",
-    },
-    {
-      id: 2,
-      title: "Thiết kế hệ thống",
-      rating: 5.0,
-      progress: 12,
-      image: "https://images.unsplash.com/photo-1511376777868-611b54f68947?q=80&w=400&auto=format&fit=crop",
-    },
-    {
-      id: 3,
-      title: "JavaScript Fundamentals",
-      rating: 3.9,
-      progress: 100,
-      image: "https://images.unsplash.com/photo-1627398242454-45a1465c2479?q=80&w=400&auto=format&fit=crop",
-    },
-  ];
+  // 2. Thay dữ liệu tĩnh bằng State quản lý dữ liệu động
+  const [myCourses, setMyCourses] = useState([]);
+  const [assignmentDeadlines, setAssignmentDeadlines] = useState([]);
+  
+  // State quản lý trạng thái tải dữ liệu
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Dữ liệu mô phỏng deadline bài tập
-  const assignmentDeadlines = [
-    { id: 1, title: "Bài tập tuần 3: Đệ quy & Con trỏ", course: "Lập trình Cơ bản", dueDate: "Thứ 4, 12/06", status: "expired" },
-    { id: 2, title: "Dự án giữa kỳ: Xây dựng CLI App", course: "JavaScript Cơ bản", dueDate: "Chủ nhật, 25/06", status: "pending" },
-    { id: 3, title: "Trắc nghiệm tự đánh giá vòng lặp", course: "Nền tảng AI hỗ trợ", dueDate: "Đã hoàn thành", status: "completed" },
-  ];
+  // 3. Tự động gọi API lấy khóa học khi trang được mở
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!currentUser || !currentUser.id) return;
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // LƯU Ý: Đổi URL này thành Endpoint API thực tế trên ASP.NET Core backend của bạn
+        // Ví dụ: `https://localhost:5001/api/students/${currentUser.id}/dashboard`
+        const response = await fetch(`http://localhost:5000/api/students/${currentUser.id}/dashboard`);
+
+        if (!response.ok) {
+          throw new Error("Lỗi máy chủ: Không thể tải danh sách khóa học.");
+        }
+
+        const data = await response.json();
+        
+        // Cập nhật state với dữ liệu trả về (Giả định cấu trúc JSON có 2 mảng này)
+        setMyCourses(data.enrolledCourses || []);
+        setAssignmentDeadlines(data.deadlines || []);
+
+      } catch (err) {
+        console.error("Lỗi fetch dữ liệu:", err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [currentUser]);
 
   // TRƯỜNG HỢP LÀM BÀI TẬP: Bung lụa 100% full màn hình, không sidebar
   if (selectedProblem) {
@@ -64,8 +75,8 @@ export default function StudentDashboard() {
       className="min-vh-100 text-dark font-sans w-100 m-0 p-0 position-relative"
       style={{ backgroundColor: "#f7f9fb" }}
     >
-      {/* Top Navbar */}
-      <Navbar />
+      {/* Top Navbar - Chuyền hàm onLogout để Navbar xử lý nút đăng xuất */}
+      <Navbar currentUser={currentUser} onLogout={onLogout} />
 
       {/* Main Layout */}
       <div className="container-fluid pt-5 mt-2 px-0">
@@ -80,10 +91,22 @@ export default function StudentDashboard() {
             style={{ backgroundColor: "#f7f9fb" }}
           >
             <div className="w-100">
-              {/* KIỂM TRA ĐIỀU KIỆN RENDER ĐỘNG */}
-              {selectedCourse ? (
+              
+              {/* KIỂM TRA TRẠNG THÁI LOADING / ERROR TRƯỚC KHI RENDER DỮ LIỆU */}
+              {isLoading ? (
+                <div className="d-flex justify-content-center align-items-center" style={{ height: "60vh" }}>
+                  <div className="spinner-border text-primary" role="status">
+                    <span className="visually-hidden">Đang tải dữ liệu...</span>
+                  </div>
+                </div>
+              ) : error ? (
+                <div className="alert alert-danger m-4 shadow-sm" role="alert">
+                  <i className="fa-solid fa-triangle-exclamation me-2"></i> {error}
+                </div>
+              ) : selectedCourse ? (
+                
+                // MÀN HÌNH CHI TIẾT KHÓA HỌC
                 <div>
-                  {/* Nút quay lại danh sách */}
                   <button
                     className="btn btn-sm btn-outline-secondary rounded-pill px-3 mb-3 d-flex align-items-center gap-2 fw-semibold"
                     onClick={() => setSelectedCourse(null)}
@@ -96,17 +119,20 @@ export default function StudentDashboard() {
                     onStartCoding={(problem) => setSelectedProblem(problem)}
                   />
                 </div>
+
               ) : (
+
+                // MÀN HÌNH DASHBOARD CHÍNH
                 <>
-                  <WelcomeBanner name="Alex" />
+                  {/* Tên hiển thị tự động lấy từ currentUser */}
+                  <WelcomeBanner name={currentUser?.fullName || "Học viên"} />
 
                   <LearningProgress />
 
-                  {/* SỬA LẠI GRID: Vùng Lịch & Deadlines */}
+                  {/* Vùng Lịch & Deadlines */}
                   <section className="mb-5">
                     <h4 className="fw-bold mb-4 text-start">Hoạt động học tập</h4>
                     <div className="row g-4">
-                      {/* Đổi từ col-xl-7 sang col-lg-7/col-xl-7 để hiển thị tốt trên màn vừa */}
                       <div className="col-12 col-lg-7 col-xl-7">
                         <Calendar />
                       </div>
@@ -116,19 +142,14 @@ export default function StudentDashboard() {
                     </div>
                   </section>
 
-                  {/* SỬA LẠI GRID: Section Khóa học của tôi */}
+                  {/* Section Khóa học của tôi */}
                   <section className="mb-5">
                     <div className="d-flex justify-content-between align-items-center mb-4">
                       <h4 className="fw-bold m-0 position-relative d-inline-block text-dark">
                         Khóa học của tôi
                         <span
                           className="position-absolute bottom-0 start-0 bg-primary rounded-pill"
-                          style={{
-                            height: "4px",
-                            width: "35px",
-                            bottom: "-6px",
-                            backgroundColor: "#3525cd",
-                          }}
+                          style={{ height: "4px", width: "35px", bottom: "-6px", backgroundColor: "#3525cd" }}
                         ></span>
                       </h4>
                       <button className="btn btn-link text-primary p-0 fw-bold d-flex align-items-center gap-1 text-decoration-none small hover-translate-x">
@@ -136,17 +157,24 @@ export default function StudentDashboard() {
                       </button>
                     </div>
 
-                    {/* SỬA TẠI ĐÂY: Thêm hàng Grid bao bọc chuẩn */}
                     <div className="row g-4">
-                      {myCourses.map((course) => (
-                        <div
-                          key={course.id}
-                          onClick={() => setSelectedCourse(course)}
-                          className="col-12 col-sm-6 col-lg-4 cursor-pointer" // FIX: Thêm class chia cột vào đây!
-                        >
-                          <CourseCard course={course} />
+                      {/* Thông báo hiển thị nếu sinh viên chưa enroll khóa nào */}
+                      {myCourses.length === 0 ? (
+                        <div className="col-12 text-center py-5 bg-white rounded-3 shadow-sm">
+                          <p className="text-muted mb-3 mt-3">Bạn chưa đăng ký tham gia khóa học nào.</p>
+                          <button className="btn btn-primary rounded-pill px-4 mb-3">Khám phá khóa học</button>
                         </div>
-                      ))}
+                      ) : (
+                        myCourses.map((course) => (
+                          <div
+                            key={course.id}
+                            onClick={() => setSelectedCourse(course)}
+                            className="col-12 col-sm-6 col-lg-4 cursor-pointer"
+                          >
+                            <CourseCard course={course} />
+                          </div>
+                        ))
+                      )}
                     </div>
                   </section>
                 </>
@@ -162,15 +190,8 @@ export default function StudentDashboard() {
         .hover-bg-light:hover { background-color: #f8f9fa; }
         .cursor-pointer { cursor: pointer; }
         
-        /* FIX LỖI LỊCH: Bắt buộc hàng chứa 7 cột phải flex-wrap xuống dòng */
-        .row-cols-7 {
-          display: flex !important;
-          flex-wrap: wrap !important;
-        }
-        .row-cols-7 > * { 
-          flex: 0 0 14.2857142857% !important; 
-          max-width: 14.2857142857% !important; 
-        }
+        .row-cols-7 { display: flex !important; flex-wrap: wrap !important; }
+        .row-cols-7 > * { flex: 0 0 14.2857142857% !important; max-width: 14.2857142857% !important; }
 
         .custom-course-card { transition: transform 0.25s ease, box-shadow 0.25s ease !important; }
         .custom-course-card:hover { transform: translateY(-6px); box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.08) !important; }

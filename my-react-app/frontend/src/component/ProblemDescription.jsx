@@ -1,108 +1,92 @@
-export default function ProblemDescription() {
+export default function ProblemDescription({ problem, theme }) {
+  // 1. Kiểm tra nếu không có dữ liệu hoặc object rỗng
+  if (!problem || Object.keys(problem).length === 0 || (!problem.title && !problem.Title)) {
+    return (
+      <div className={`h-100 p-4 text-center d-flex align-items-center justify-content-center ${theme === "vs-dark" ? "bg-dark text-muted" : "bg-white text-muted"}`}>
+        <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span>Đang tải nội dung đề bài...</span>
+      </div>
+    );
+  }
+
+  const isDark = theme === "vs-dark";
+
+  // 2. CHUẨN HÓA DỮ LIỆU ĐẦU VÀO (Bất chấp API trả về viết Hoa hay viết Thường)
+  const title = problem.title || problem.Title || "Bài tập chưa đặt tên";
+  const description = problem.description || problem.Description || "Chưa có mô tả chi tiết cho bài tập này. Vui lòng kiểm tra lại API.";
+
+  // Bóc tách độ khó từ chuỗi "Coding [Dễ]" hoặc thuộc tính riêng lẻ
+  let difficulty = "DỄ";
+  const typeStr = problem.type || "";
+  if (typeStr.includes("[") && typeStr.includes("]")) {
+    difficulty = typeStr.substring(typeStr.indexOf("[") + 1, typeStr.indexOf("]")).toUpperCase();
+  } else if (problem.difficulty || problem.Difficulty) {
+    difficulty = (problem.difficulty || problem.Difficulty).toUpperCase();
+  }
+
+  // Bộ Parser tối ưu riêng cho định dạng văn bản thuần từ SQL Server của bạn
+  const parsePlainToDynamicHTML = (text) => {
+    if (!text) return "";
+
+    // Bảo mật: Tránh lỗi XSS bảo vệ cấu trúc HTML
+    let html = text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+
+    // 1. Nhận diện các biến/từ khóa nằm trong dấu ` và làm nổi bật
+    const codeClass = isDark ? "bg-secondary text-warning bg-opacity-40" : "bg-light text-danger fw-semibold";
+    html = html.replace(/`([^`]+)`/g, `<code class="${codeClass} px-1.5 py-0.5 rounded" style="font-size: 14.5px;">$1</code>`);
+
+    // 2. Làm đậm và đổi màu các nhãn dữ liệu chuẩn của bài toán
+    html = html.replace(/(Input:|Output:|Ví dụ mẫu:|Định dạng đầu vào \(Input\):|Định dạng đầu ra \(Output\):|Mô tả bài toán:)/g, 
+      `<strong class="text-primary d-inline-block mt-2 mb-1" style="font-size: 16px;">$1</strong>`
+    );
+
+    // 3. Tự động gom các dòng chứa dữ liệu Input/Output mẫu vào một khung xám (Khối Card giả lập)
+    html = html.replace(/(Input: .+\nOutput: .+(?:\nExplanation: .+)?)/g, 
+      `<div class="p-3 rounded-3 my-2 font-monospace ${isDark ? "bg-secondary bg-opacity-10 border border-secondary border-opacity-25 text-light" : "bg-light text-dark"}" style="white-space: pre-wrap; line-height: 1.6;">$1</div>`
+    );
+
+    // 4. Tách dòng và bọc thẻ Paragraph chuẩn chỉnh
+    html = html.split("\n").map(line => {
+      if (line.trim().startsWith("<div") || line.trim().startsWith("</div")) return line;
+      return line.trim() ? `<p class="mb-2">${line}</p>` : "<br/>";
+    }).join("");
+
+    return html;
+  };
+
   return (
     <div
-      className="h-100 overflow-y-auto p-4 bg-white text-start border-end"
-      style={{ maxHeight: "calc(100vh - 57px)" }}
+      className="h-100 overflow-y-auto p-4 text-start transition-all"
+      style={{ 
+        maxHeight: "calc(100vh - 57px)",
+        backgroundColor: isDark ? "#1e1e1e" : "#ffffff",
+        color: isDark ? "#f8f9fa" : "#212529"
+      }}
     >
-      {/* Tiêu đề & Độ khó */}
-      <div className="d-flex align-items-center gap-3 mb-3">
-        <h2 className="fw-bold m-0 text-dark" style={{ fontSize: "28px" }}>
-          1. Two Sum
+      {/* Khối Header: Đã chuyển sang dùng các biến chuẩn hóa độc lập */}
+      <div className="d-flex align-items-center gap-3 mb-4 border-bottom pb-3 border-secondary border-opacity-10">
+        <h2 className="fw-bold m-0" style={{ fontSize: "24px" }}>
+          {title}
         </h2>
-        <span
-          className="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1.5 fw-bold"
-          style={{ fontSize: "12px", letterSpacing: "0.5px" }}
+        <span 
+          className={`badge rounded-pill px-3 py-1.5 fw-bold ${
+            difficulty === "DỄ" ? "bg-success bg-opacity-10 text-success" : "bg-warning bg-opacity-10 text-warning"
+          }`}
+          style={{ fontSize: "11px", letterSpacing: "0.5px" }}
         >
-          EASY
+          {difficulty}
         </span>
       </div>
 
-      {/* Đề bài */}
-      <div
-        className="text-secondary mb-4"
-        style={{ fontSize: "15px", lineHeight: "1.6" }}
-      >
-        <p>
-          Given an array of integers{" "}
-          <code className="bg-light px-1.5 py-0.5 rounded text-dark fw-semibold">
-            nums
-          </code>{" "}
-          and an integer{" "}
-          <code className="bg-light px-1.5 py-0.5 rounded text-dark fw-semibold">
-            target
-          </code>
-          , return indices of the two numbers such that they add up to{" "}
-          <code className="bg-light px-1.5 py-0.5 rounded text-dark fw-semibold">
-            target
-          </code>
-          .
-        </p>
-        <p>
-          You may assume that each input would have{" "}
-          <strong>exactly one solution</strong>, and you may not use the same
-          element twice.
-        </p>
-        <p className="fst-italic text-muted">
-          You can return the answer in any order.
-        </p>
-      </div>
-
-      {/* Phần Ví dụ */}
-      <div className="mb-4">
-        <h5 className="fw-bold text-dark mb-3" style={{ fontSize: "16px" }}>
-          Examples
-        </h5>
-
-        {/* Ví dụ 1 */}
-        <div className="card bg-light border-0 rounded-3 p-3.5 mb-3">
-          <div className="fw-bold text-primary small mb-1">Example 1:</div>
-          <div
-            className="font-monospace text-dark small"
-            style={{ lineHeight: "1.7" }}
-          >
-            <strong>Input:</strong> nums = [2,7,11,15], target = 9 <br />
-            <strong>Output:</strong> [0,1] <br />
-            <strong>Explanation:</strong> Because nums[0] + nums[1] == 9, we
-            return [0, 1].
-          </div>
-        </div>
-
-        {/* Ví dụ 2 */}
-        <div className="card bg-light border-0 rounded-3 p-3.5">
-          <div className="fw-bold text-primary small mb-1">Example 2:</div>
-          <div className="font-monospace text-dark small">
-            <strong>Input:</strong> nums = [3,2,4], target = 6 <br />
-            <strong>Output:</strong> [1,2]
-          </div>
-        </div>
-      </div>
-
-      {/* Ràng buộc - Constraints */}
-      <div className="mb-4">
-        <h5 className="fw-bold text-dark mb-2" style={{ fontSize: "16px" }}>
-          Constraints
-        </h5>
-        <ul
-          className="text-secondary small font-monospace ps-3"
-          style={{ lineHeight: "1.8" }}
-        >
-          <li>2 &le; nums.length &le; 10⁴</li>
-          <li>-10⁹ &le; nums[i] &le; 10⁹</li>
-          <li>-10⁹ &le; target &le; 10⁹</li>
-          <li>Only one valid answer exists.</li>
-        </ul>
-      </div>
-
-      {/* Gợi ý thuật toán (Hint Box)
-      <div className="card border-0 rounded-4 p-3.5 text-white d-flex flex-row gap-3 align-items-start" style={{ backgroundColor: "#3525cd" }}>
-        <i className="fa-regular fa-lightbulb fs-4 mt-0.5"></i>
-        <div>
-          <div className="fw-bold mb-1" style={{ fontSize: "15px" }}>Algorithm Hint</div>
-          <p className="mb-0 opacity-75 small" style={{ lineHeight: "1.5" }}>
-            Consider using a Hash Map to store the complement of each number. This allows for a single-pass solution with O(n) time complexity.
-          </p>
-        </div>
-      </div> */}
+      {/* Khối Body: Đã chuyển sang dùng biến description đã chuẩn hóa */}
+      <div 
+        className={`problem-description-content ${isDark ? "text-light" : "text-secondary"}`}
+        style={{ fontSize: "15px", lineHeight: "1.7" }}
+        dangerouslySetInnerHTML={{ __html: parsePlainToDynamicHTML(description) }}
+      />
     </div>
   );
 }
