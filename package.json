@@ -5,6 +5,10 @@
     "bootstrap-icons": "^1.13.1",
     "dotenv": "^17.4.2",
     "msnodesqlv8": "^5.2.1",
-    "mssql": "^12.5.5"
+    "mssql": "^12.5.5",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-icons": "^5.7.0",
+    "react-router-dom": "^7.18.1"
   }
 }
