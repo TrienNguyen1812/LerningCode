@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const sql = require("mssql");
 require("dotenv").config();
 
 // Khởi tạo ứng dụng Express
@@ -14,12 +15,14 @@ const authRoutes = require("./src/routes/auth");
 const adminRoutes = require("./src/routes/admin");
 const studentRoutes = require("./src/routes/student");
 const problemRoutes = require("./src/routes/judge"); // Tuyến đường compiler chuyên biệt
+const submissionRoutes = require("./src/routes/submission");
 
 // Đăng ký sử dụng các Routes với tiền tố prefix chuẩn RESTful
 app.use("/api/auth", authRoutes);       // Ví dụ: /api/auth/login
 app.use("/api/admin", adminRoutes);     // Ví dụ: /api/admin/dashboard
 app.use("/api/students", studentRoutes); // Ví dụ: /api/students/:id/dashboard, /api/students/courses/:idCourse/details
 app.use("/api/judges", problemRoutes);   // Ví dụ: /api/judges/execute
+app.use('/api/submissions', submissionRoutes);
 
 // Khởi chạy máy chủ
 const PORT = process.env.PORT || 5000;
