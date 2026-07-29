@@ -3,7 +3,9 @@ const CSharpStrategy = require("./strategies/CSharpStrategy");
 class CompilerFactory {
   static getStrategy(language) {
     switch (language.toLowerCase()) {
+      case "c#":
       case "csharp":
+      case "cs":
         return new CSharpStrategy();
       default:
         throw new Error(`Ngôn ngữ ${language} chưa được hỗ trợ.`);

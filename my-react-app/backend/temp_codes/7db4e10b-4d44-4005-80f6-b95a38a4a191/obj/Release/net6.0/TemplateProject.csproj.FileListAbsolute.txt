@@ -1,0 +1,5 @@
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7db4e10b-4d44-4005-80f6-b95a38a4a191\obj\Release\net6.0\TemplateProject.csproj.AssemblyReference.cache
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7db4e10b-4d44-4005-80f6-b95a38a4a191\obj\Release\net6.0\TemplateProject.GeneratedMSBuildEditorConfig.editorconfig
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7db4e10b-4d44-4005-80f6-b95a38a4a191\obj\Release\net6.0\TemplateProject.AssemblyInfoInputs.cache
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7db4e10b-4d44-4005-80f6-b95a38a4a191\obj\Release\net6.0\TemplateProject.AssemblyInfo.cs
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7db4e10b-4d44-4005-80f6-b95a38a4a191\obj\Release\net6.0\TemplateProject.csproj.CoreCompileInputs.cache

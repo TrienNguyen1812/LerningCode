@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  backend-service:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - D:/KLTN_ReactJS/my-react-app/backend/temp_codes:/app/temp_codes # Nếu chạy Docker trên Windows
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'     # Tăng CPU để build C# mượt hơn
+          memory: 1024M    # Nâng lên 1GB cho Backend xử lý Docker Runner
+
+  frontend-service:
+    build: ./frontend
+    ports:
+      - "5173:5173"  # Port Vite mặc định
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M

@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  Restored /app/TemplateProject.csproj (in 179 ms).
+/app/Solution.cs(12,21): error CS0117: 'Console' does not contain a definition for 'WritLine' [/app/TemplateProject.csproj]
+
+Build FAILED.
+
+/app/Solution.cs(12,21): error CS0117: 'Console' does not contain a definition for 'WritLine' [/app/TemplateProject.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:09.35

@@ -12,11 +12,11 @@ const dbConfig = {
 const poolPromise = sql
   .connect(dbConfig)
   .then((pool) => {
-    console.log("👉 Đã kết nối thành công tới SQL Server: DevLearnerDB");
+    console.log("Đã kết nối thành công tới SQL Server: DevLearnerDB");
     return pool;
   })
   .catch((err) => {
-    console.error("❌ Lỗi kết nối CSDL:", err);
+    console.error("Lỗi kết nối CSDL:", err);
   });
 
 module.exports = {

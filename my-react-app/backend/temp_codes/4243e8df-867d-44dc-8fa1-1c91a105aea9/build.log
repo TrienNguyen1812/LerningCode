@@ -1,0 +1,9 @@
+/app/Solution.cs(12,40): error CS1002: ; expected [/app/TemplateProject.csproj]
+
+Build FAILED.
+
+/app/Solution.cs(12,40): error CS1002: ; expected [/app/TemplateProject.csproj]
+    0 Warning(s)
+    1 Error(s)
+
+Time Elapsed 00:00:05.58

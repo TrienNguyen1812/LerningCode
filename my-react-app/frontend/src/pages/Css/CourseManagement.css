@@ -1,0 +1,295 @@
+/* ==========================================================================
+   LAYOUT VÙNG KHÓA HỌC & THANH CHỨC NĂNG
+   ========================================================================== */
+.cm-container {
+  width: 100%;
+  padding: 1.5rem; /* Giảm nhẹ padding ngoài để nhường khoảng trống cho card con */
+  box-sizing: border-box;
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* 🌟 CLASS MỚI: Card nền trắng bọc toàn bộ nội dung theo style hình 2 */
+.cm-main-card {
+  background-color: #ffffff;
+  border: 1px solid #eaecf0; /* Viền mờ nhẹ */
+  border-radius: 16px; /* Bo góc mượt mà */
+  padding: 2rem; /* Khoảng đệm rộng rãi sang trọng bên trong card */
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.05); /* Đổ bóng cực mịn */
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Đồng bộ lại lưới row nằm bên trong card trắng */
+.cm-main-card .row {
+  margin-left: -12px;
+  margin-right: -12px;
+  overflow: visible; /* Trả về visible để các tương tác hover card không bị cắt cụt */
+}
+
+/* 🌟 FIX SCROLLBAR: Ngăn chặn lưới Bootstrap mở rộng làm tràn khung sinh scrollbar ngang/dọc phụ */
+.cm-container .row {
+  margin-left: 0;
+  margin-right: 0;
+  overflow: hidden;
+}
+
+.cm-nav-header {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid #f2f4f7;
+}
+
+@media (min-width: 768px) {
+  .cm-nav-header {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+/* Nhóm công cụ bên phải */
+.cm-action-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .cm-action-group {
+    margin-top: 0;
+  }
+}
+
+/* Các nút lọc chung */
+.cm-btn-filter {
+  background-color: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  color: #667085;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 0.5rem 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cm-btn-filter:hover {
+  background-color: #f9fafb;
+  color: #344054;
+}
+
+/* Nút tạo mới xanh mint */
+.cm-btn-primary {
+  background-color: #0c9488;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.cm-btn-primary:hover {
+  background-color: #0f766e;
+}
+
+/* Switch layout Grid/List */
+.cm-layout-toggle {
+  display: flex;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: #f9fafb;
+  padding: 2px;
+}
+
+.cm-toggle-btn {
+  border: none;
+  background: transparent;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+  color: #667085;
+  cursor: pointer;
+}
+
+.cm-toggle-btn.active {
+  background-color: #ffffff;
+  color: #1d2939;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
+}
+
+/* ==========================================================================
+   CSS CHO THÈ CARD HÌNH 3
+   ========================================================================== */
+.cm-card {
+  background: #ffffff;
+  border: 1px solid #eaecf0;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.cm-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(16, 24, 40, 0.06);
+}
+
+.cm-card-image-box {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background-color: #f2f4f7;
+}
+
+.cm-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cm-badge-elearning {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(29, 35, 42, 0.8);
+  color: #ffffff;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  backdrop-filter: blur(4px);
+}
+
+.cm-card-body {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+}
+
+.cm-card-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1d2939;
+  line-height: 1.4;
+  margin-bottom: 1.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  height: 44px;
+}
+
+.cm-progress-container {
+  margin-bottom: 1.25rem;
+}
+
+.cm-progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 500;
+  color: #667085;
+  margin-bottom: 0.5rem;
+}
+
+.cm-progress-percent {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.cm-progress-bar {
+  height: 6px;
+  background-color: #f2f4f7;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.cm-progress-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 10px;
+}
+
+/* Khối nút thao tác sửa xóa */
+.cm-card-footer {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f2f4f7;
+}
+
+.cm-btn-action {
+  flex: 1;
+  padding: 0.45rem;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.cm-btn-action.edit {
+  border: 1px solid #d0d5dd;
+  color: #344054;
+}
+
+.cm-btn-action.edit:hover {
+  background-color: #f9fafb;
+}
+
+.cm-btn-action.delete {
+  border: 1px solid #fecdca;
+  color: #d92d20;
+}
+
+.cm-btn-action.delete:hover {
+  background-color: #fef3f2;
+}
+
+/* Custom modal bo tròn */
+.cm-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(16, 24, 40, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1060;
+}
+
+.cm-modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 480px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 24px -4px rgba(16, 24, 40, 0.08);
+}

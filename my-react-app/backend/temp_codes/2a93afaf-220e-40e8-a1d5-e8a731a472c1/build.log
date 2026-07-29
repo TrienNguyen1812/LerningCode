@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  Restored /app/TemplateProject.csproj (in 545 ms).
+  TemplateProject -> /app/bin/TemplateProject.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:23.40

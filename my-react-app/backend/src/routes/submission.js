@@ -5,7 +5,7 @@ const CSharpStrategy = require("../services/compiler/strategies/CSharpStrategy")
 
 const router = express.Router();
 
-// 🚀 API ENDPOINT: POST /api/submissions/submit
+// API ENDPOINT: POST /api/submissions/submit
 router.post("/submit", async (req, res) => {
   const { idUser, idProblem, codeContent, language } = req.body;
 

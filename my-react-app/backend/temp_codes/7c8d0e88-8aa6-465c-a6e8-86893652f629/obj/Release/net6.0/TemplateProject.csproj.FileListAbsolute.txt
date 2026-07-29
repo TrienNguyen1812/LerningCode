@@ -1,0 +1,15 @@
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\bin\TemplateProject.exe
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\bin\TemplateProject.deps.json
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\bin\TemplateProject.runtimeconfig.json
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\bin\TemplateProject.dll
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\bin\ref\TemplateProject.dll
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\bin\TemplateProject.pdb
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.csproj.AssemblyReference.cache
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.GeneratedMSBuildEditorConfig.editorconfig
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.AssemblyInfoInputs.cache
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.AssemblyInfo.cs
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.csproj.CoreCompileInputs.cache
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.dll
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\ref\TemplateProject.dll
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.pdb
+D:\KLTN_ReactJS\my-react-app\backend\temp_codes\7c8d0e88-8aa6-465c-a6e8-86893652f629\obj\Release\net6.0\TemplateProject.genruntimeconfig.cache

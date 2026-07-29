@@ -1,0 +1,189 @@
+/* Layout chung của trang Editor */
+.lesson-editor-container {
+  background-color: #f8fafc;
+  min-height: 100vh;
+}
+
+.editor-main-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f5f9;
+}
+
+/* Content Blocks */
+.content-block-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* 1. Card Media hiển thị cho Video/Hình ảnh (Hình 2) */
+.media-preview-card {
+  position: relative;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 16px;
+  padding: 40px 24px 24px 24px;
+  color: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(217, 119, 6, 0.25);
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.media-preview-card .play-btn-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  width: 64px;
+  height: 64px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d97706;
+  font-size: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.media-preview-card .play-btn-overlay:hover {
+  transform: translate(-50%, -60%) scale(1.08);
+}
+
+.media-preview-card .btn-remove-media {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background-color 0.2s ease;
+}
+
+.media-preview-card .btn-remove-media:hover {
+  background: #000000;
+}
+
+/* 2. Style Dạng Dòng cho File Tài Liệu DOCX, PPTX, PDF... (Hình 4) */
+.document-file-block {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.document-file-block:hover {
+  border-color: #0d9488;
+  box-shadow: 0 2px 10px rgba(13, 148, 136, 0.08);
+}
+
+.document-file-block .doc-icon {
+  color: #0d9488;
+  font-size: 20px;
+}
+
+.document-file-block .doc-name {
+  font-weight: 500;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.btn-remove-doc {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-doc:hover {
+  background-color: #fef2f2;
+  color: #ef4444;
+}
+
+/* Dropdown Menu + Content (Hình 1) */
+.content-dropdown-menu {
+  width: 240px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  padding: 12px;
+  z-index: 100;
+}
+
+.dropdown-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.content-option-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #334155;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.content-option-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Table chọn File Modal (Hình 3) */
+.file-select-table tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.file-select-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.file-select-table tr.selected {
+  background-color: #fef3c7 !important;
+}
+
+/* Nút Teal màu chủ đạo */
+.btn-teal {
+  background-color: #0d9488;
+  color: #ffffff;
+  border: none;
+}
+
+.btn-teal:hover {
+  background-color: #0f766e;
+  color: #ffffff;
+}

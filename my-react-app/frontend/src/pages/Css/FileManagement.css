@@ -1,0 +1,115 @@
+/* ==========================================
+   FILES MANAGEMENT CARD & DROPDOWN MENU
+   ========================================== */
+
+/* Card File */
+.file-card {
+  position: relative;
+  border-radius: 16px;
+  background-color: #ffffff;
+  border: 1px solid #eaecf0;
+  transition: all 0.2s ease-in-out;
+  overflow: visible !important; /* Đảm bảo dropdown tràn ra ngoài không bị cắt */
+}
+
+.file-card:hover,
+.hover-shadow:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-3px);
+}
+
+/* Khung Thumbnail Preview */
+.file-card-preview {
+  height: 140px;
+  background-color: #f9fafb;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Nút More (3 chấm tròn) */
+.btn-three-dots {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  border-radius: 50%;
+  border: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-three-dots:hover {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* DROPDOWN MENU */
+.file-dropdown-menu,
+.file-card-action .shadow-dropdown {
+  position: absolute;
+  top: 38px;
+  right: 10px;
+  width: 170px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid #eaecf0;
+  padding: 6px;
+  z-index: 9999 !important; /* Luôn đè lên trên các card bên dưới */
+}
+
+/* Item trong Dropdown Menu */
+.file-dropdown-item,
+.file-card-action .dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #4b5563;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.file-dropdown-item:hover,
+.file-card-action .dropdown-item:hover {
+  background-color: #f3f4f6;
+  color: #111827 !important;
+}
+
+/* Styling cho Nút Delete màu đỏ */
+.file-dropdown-item.delete-item,
+.file-card-action .dropdown-item.text-danger {
+  color: #dc2626 !important;
+}
+
+.file-dropdown-item.delete-item:hover,
+.file-card-action .dropdown-item.text-danger:hover {
+  background-color: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+/* Utility Helpers */
+.fs-7 {
+  font-size: 0.85rem;
+}
+
+.py-1-5 {
+  padding-top: 0.375rem;
+  padding-bottom: 0.375rem;
+}

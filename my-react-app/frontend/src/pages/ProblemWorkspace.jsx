@@ -1,140 +1,353 @@
-import { useState } from "react";
-import WorkspaceHeader from "../component/WorkspaceHeader";
-import ProblemDescription from "../component/ProblemDescription";
-import CodeEditor from "../component/CodeEditor";
-import AIAssistantPopup from "../component/AIAssistant";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 
-export default function ProblemWorkspacePage({ problem, onExitWorkspace }) {
+import WorkspaceHeader from "../components/WorkspaceHeader";
+import ProblemDescription from "../components/ProblemDescription";
+import CodeEditor from "../components/CodeEditor";
+import AIAssistantPopup from "../components/AIAssistant";
+
+const API_BASE_URL = "http://localhost:5000/api";
+
+const OutputBox = ({ content, theme, variant = "default", extraClass = "" }) => {
+  const isDark = theme === "vs-dark";
+  const colorClass =
+    variant === "success"
+      ? "text-success"
+      : variant === "danger"
+      ? "text-danger"
+      : isDark
+      ? "text-light"
+      : "text-dark";
+  const bgClass = isDark
+    ? "bg-black border-secondary border-opacity-25"
+    : "bg-white border-light";
+
+  return (
+    <pre
+      className={`p-2 rounded border m-0 fw-bold ${bgClass} ${colorClass} ${extraClass}`}
+      style={{ whiteSpace: "pre-wrap", fontFamily: "monospace" }}
+    >
+      {content || "Rỗng (No data)"}
+    </pre>
+  );
+};
+
+// Sub-component hiển thị chi tiết Test Case (Public + Hidden)
+const TestCaseDetailView = ({ tc, activeTab, theme, onDownload }) => {
+  // Bỏ ẩn hoàn toàn ở Frontend
+  const isHidden = false; 
+
+  return (
+    <div
+      className="flex-grow-1 overflow-y-auto pe-2 d-flex flex-column gap-3"
+      style={{ fontSize: "13px" }}
+    >
+      {/* STATUS & COMPILER MESSAGE + EXECUTION TIME */}
+      <div>
+        <div className="text-muted small mb-1">Compiler Message</div>
+        <div className="d-flex align-items-center justify-content-between">
+          <div
+            className={`fw-bold fs-5 ${
+              tc.isPassed || tc.Is_passed || tc.status === "Passed"
+                ? "text-success"
+                : "text-danger"
+            }`}
+          >
+            {tc.isPassed || tc.Is_passed || tc.status === "Passed"
+              ? "Success"
+              : tc.status === "Compile Error" || tc.status === "Error"
+              ? "Compilation / System Error"
+              : "Wrong Answer"}
+          </div>
+
+          {/* ⏱️ HIỂN THỊ THỜI GIAN RIÊNG CỦA TEST CASE */}
+          {tc.executionTime && (
+            <span className="badge bg-secondary bg-opacity-25 text-info font-monospace fw-normal">
+              <i className="fa-regular fa-clock me-1"></i>
+              {tc.executionTime}
+            </span>
+          )}
+        </div>
+
+        {tc.errorMessage && (
+          <pre className="text-danger mt-1 bg-black bg-opacity-25 p-2 rounded small text-wrap">
+            {tc.errorMessage}
+          </pre>
+        )}
+      </div>
+
+      {/* HIỂN THỊ CÁC TRƯỜNG DỮ LIỆU INPUT / EXPECTED */}
+      {[
+        {
+          label: "Input (stdin)",
+          data: tc.input || tc.testCaseInput || tc.Input_data,
+          filePrefix: "input",
+        },
+        {
+          label: "Expected Output",
+          data: tc.expectedOutput || tc.Expected_output,
+          filePrefix: "expected",
+        },
+      ].map((item, idx) => (
+        <div key={idx}>
+          <div className="text-muted small mb-1 d-flex justify-content-between align-items-center">
+            <span>{item.label}</span>
+            {item.data && (
+              <span
+                className="text-primary cursor-pointer small opacity-75 hover-opacity-100"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  onDownload(item.data, `${item.filePrefix}_tc_${activeTab + 1}.txt`)
+                }
+              >
+                <i className="fa-solid fa-download me-1"></i> Download
+              </span>
+            )}
+          </div>
+          <OutputBox content={item.data} theme={theme} />
+        </div>
+      ))}
+
+      {/* YOUR OUTPUT */}
+      <div>
+        <div className="text-muted small mb-1">Your Output</div>
+        <OutputBox
+          content={tc.actualOutput || tc.Actual_output || tc.stdout || ""}
+          theme={theme}
+          variant={tc.isPassed || tc.Is_passed || tc.status === "Passed" ? "success" : "danger"}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default function ProblemWorkspacePage({ problem: initialProblem, onExitWorkspace }) {
+  const rawId = initialProblem?.IdProblem || initialProblem?.idProblem || initialProblem?.id;
+  const problemId = rawId ? Number(rawId) : null;
+
+  const DEFAULT_SAMPLE_CODE = "// Viết code của bạn tại đây...";
+
+  const [problem, setProblem] = useState(initialProblem);
+  const [loadingProblem, setLoadingProblem] = useState(false);
+
+  const extractSampleCode = (probData) => {
+    return (
+      probData?.Sample_code ||
+      probData?.sampleCode ||
+      probData?.sample_code ||
+      DEFAULT_SAMPLE_CODE
+    );
+  };
+
+  const [code, setCode] = useState(() => extractSampleCode(initialProblem));
+  const prevProblemIdRef = useRef(problemId);
+
   const [showAI, setShowAI] = useState(false);
-
-  // Quản lý trạng thái UI
-  const [theme, setTheme] = useState("vs-light");
+  const [theme, setTheme] = useState("vs-dark");
   const [language, setLanguage] = useState("csharp");
-  
-  // 🌟 KHỞI TẠO STATE TRỰCTIẾP TỪ PROPS
-  const [code, setCode] = useState(() => problem?.sampleCode || "// Viết code của bạn tại đây...");
 
-  // Quản lý kết quả chấm bài
   const [showTestCases, setShowTestCases] = useState(false);
   const [isCompiling, setIsCompiling] = useState(false);
-  
-  // Lưu kết quả phong phú (hỗ trợ cả dạng Object của RUN và Object thống kê của SUBMIT)
   const [output, setOutput] = useState(null);
-  const [currentAction, setCurrentAction] = useState("RUN"); // "RUN" hoặc "SUBMIT"
-  
-  // 🌟 KHÔI PHỤC STATE QUẢN LÝ TAB HOẠT ĐỘNG
+  const [currentAction, setCurrentAction] = useState("RUN");
   const [activeTab, setActiveTab] = useState(0);
+  const [hasRunCode, setHasRunCode] = useState(false);
 
-  // Giả lập lấy ID người dùng hiện tại
-  const currentUserId = 1; 
+  const currentUserId = 1;
+  const isDark = theme === "vs-dark";
 
-  // 1. HÀM CHẠY THỬ (RUN CODE)
-  const handleRunCode = async () => {
-    setCurrentAction("RUN");
+  useEffect(() => {
+    const fetchFullProblem = async () => {
+      if (!problemId) return;
+
+      if (initialProblem?.Description || initialProblem?.description) {
+        setProblem(initialProblem);
+        if (problemId !== prevProblemIdRef.current) {
+          setCode(extractSampleCode(initialProblem));
+          prevProblemIdRef.current = problemId;
+        }
+        return;
+      }
+
+      try {
+        setLoadingProblem(true);
+        const res = await axios.get(`${API_BASE_URL}/problems/${problemId}`);
+        const fullData = res.data?.data || res.data;
+        if (fullData) {
+          setProblem(fullData);
+          setCode(extractSampleCode(fullData));
+          prevProblemIdRef.current = problemId;
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải thông tin chi tiết bài tập:", err);
+      } finally {
+        setLoadingProblem(false);
+      }
+    };
+
+    fetchFullProblem();
+  }, [problemId, initialProblem]);
+
+  const handleDownload = (content, fileName) => {
+    if (!content) return;
+    const element = document.createElement("a");
+    element.href = URL.createObjectURL(new Blob([content], { type: "text/plain" }));
+    element.download = fileName;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const executeCode = async (action) => {
+    setHasRunCode(true);
+    setCurrentAction(action);
     setShowTestCases(true);
     setIsCompiling(true);
     setOutput(null);
-    setActiveTab(0); // Reset tab về 0 khi chạy mới
+    setActiveTab(0);
 
-    try {
-      const response = await fetch("http://localhost:5000/api/judges/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          problemId: problem?.id,
+    const isRun = action === "RUN";
+    const url = isRun
+      ? `${API_BASE_URL}/judges/execute`
+      : `${API_BASE_URL}/submissions/submit`;
+
+    const body = isRun
+      ? {
+          idProblem: problemId,
+          problemId: problemId,
           code: code,
+          codeContent: code,
           language: language,
           action: "RUN",
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setOutput(result.data);
-      } else {
-        setOutput({
-          status: "Error",
-          message: result.message || "Lỗi biên dịch hệ thống.",
-        });
-      }
-    } catch (error) {
-      console.error("Run code error:", error);
-      setOutput({
-        status: "Error",
-        message: "Không thể kết nối đến máy chủ compiler.",
-      });
-    } finally {
-      setIsCompiling(false);
-    }
-  };
-
-  // 2. HÀM NỘP BÀI THẬT (SUBMIT CODE)
-  const handleSubmitCode = async () => {
-    setCurrentAction("SUBMIT");
-    setShowTestCases(true);
-    setIsCompiling(true);
-    setOutput(null);
-    setActiveTab(0); // Reset tab về 0 khi nộp bài mới
+          includeHidden: true, // Gửi flag yêu cầu Backend chạy cả Hidden test cases khi RUN
+        }
+      : {
+          idUser: currentUserId,
+          idProblem: problemId,
+          problemId: problemId,
+          codeContent: code,
+          code: code,
+          language: language,
+        };
 
     try {
-      const response = await fetch("http://localhost:5000/api/submissions/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          idUser: currentUserId,
-          idProblem: problem?.id,
-          codeContent: code,
-          language: language
-        }),
-      });
+      const response = await axios.post(url, body);
+      const resData = response.data;
 
-      const result = await response.json();
+      if (resData?.success) {
+        const resultData = resData.data || resData;
+        setOutput(resultData);
 
-      if (result.success) {
-        setOutput(result.data); 
+        if (resultData.testCaseDetails && resultData.testCaseDetails.length > 0) {
+          const firstFailedIndex = resultData.testCaseDetails.findIndex(
+            (tc) => !tc.isPassed && !tc.Is_passed
+          );
+          if (firstFailedIndex !== -1) {
+            setActiveTab(firstFailedIndex);
+          }
+        }
       } else {
         setOutput({
           status: "Error",
-          message: result.message || "Gặp lỗi trong quá trình nộp bài.",
+          message:
+            resData?.message ||
+            (isRun ? "Lỗi biên dịch hệ thống." : "Gặp lỗi trong quá trình nộp bài."),
         });
       }
     } catch (error) {
-      console.error("Submit code error:", error);
+      console.error(`${action} code error:`, error);
       setOutput({
         status: "Error",
-        message: "Không thể kết nối đến máy chủ Submissions.",
+        message:
+          error.response?.data?.message ||
+          `Không thể kết nối đến máy chủ ${isRun ? "Compiler" : "Submissions"}.`,
       });
     } finally {
       setIsCompiling(false);
     }
   };
+
+  // 🔥 HÀM CHUẨN HÓA LẤY TOÀN BỘ DANH SÁCH TEST CASES ĐÃ SỬA
+  const getDisplayTestCases = () => {
+    if (!output) return [];
+
+    // Ưu tiên mảng testCaseDetails
+    const details = output.testCaseDetails || output.results || output.details;
+
+    if (Array.isArray(details) && details.length > 0) {
+      return details.map((tc, idx) => {
+        return {
+          name: tc.name || tc.testCaseName || `Test Case ${idx + 1}`,
+          isPassed: tc.isPassed ?? tc.Is_passed ?? (tc.status === "Passed" || tc.status === "Accepted"),
+          status: tc.status || (tc.isPassed ? "Passed" : "Wrong Answer"),
+          input: tc.input || tc.testCaseInput || tc.Input_data || "",
+          expectedOutput: tc.expectedOutput || tc.Expected_output || "",
+          actualOutput: tc.actualOutput || tc.Actual_output || tc.stdout || "",
+          errorMessage: tc.errorMessage || tc.message || "",
+          executionTime: tc.executionTime || tc.duration || output?.executionTime || output?.duration || "", // ⏱️ Lấy thời gian biên dịch
+          isHidden: false // Luôn hiển thị dữ liệu gốc, bỏ icon khoá ẩn
+        };
+      });
+    }
+
+    // Fallback nếu API chỉ trả kết quả tổng quan
+    return [
+      {
+        name: "Test Case 1",
+        isPassed: output.isCorrect || output.status === "Success" || output.status === "Accepted",
+        status: output.status,
+        input: output.testCaseInput || output.input || "",
+        expectedOutput: output.expectedOutput || "",
+        actualOutput: output.actualOutput || output.stdout || "",
+        errorMessage: output.message || output.errorMessage || "",
+        executionTime: output.executionTime || output.duration || "", // ⏱️ Lấy thời gian biên dịch
+        isHidden: false
+      },
+    ];
+  };
+
+  const testCasesList = getDisplayTestCases();
+  const currentTestCase = testCasesList[activeTab] || testCasesList[0] || {};
 
   return (
     <div
       className="vw-100 vh-100 d-flex flex-column m-0 p-0 overflow-hidden"
       style={{
         position: "fixed",
-        top: 0, left: 0, right: 0, bottom: 0,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         zIndex: 9999,
-        backgroundColor: theme === "vs-dark" ? "#1e1e1e" : "#f8f9fa",
+        backgroundColor: isDark ? "#1e1e1e" : "#f8f9fa",
       }}
     >
       <WorkspaceHeader
-        problemTitle={problem?.title || "Bài tập lập trình"}
+        problemTitle={problem?.Title || problem?.title || "Bài tập lập trình"}
         onExit={onExitWorkspace}
         onToggleAI={() => setShowAI(!showAI)}
         theme={theme}
         onChangeTheme={setTheme}
         language={language}
         onChangeLanguage={setLanguage}
-        onRunCode={handleRunCode}
-        onSubmitCode={handleSubmitCode}
+        onRunCode={() => executeCode("RUN")}
+        onSubmitCode={() => executeCode("SUBMIT")}
       />
 
       <div className="row g-0 flex-grow-1 overflow-hidden w-100 m-0">
-        <div className={`col-12 col-lg-5 h-100 overflow-y-auto border-end ${theme === "vs-dark" ? "bg-dark text-light border-secondary" : "bg-white text-dark"}`}>
-          <ProblemDescription problem={problem} theme={theme} />
+        <div
+          className={`col-12 col-lg-5 h-100 overflow-y-auto border-end ${
+            isDark ? "bg-dark text-light border-secondary" : "bg-white text-dark"
+          }`}
+        >
+          {loadingProblem ? (
+            <div className="p-4 text-center text-muted">
+              <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+              <span>Đang lấy chi tiết bài tập từ Server...</span>
+            </div>
+          ) : (
+            <ProblemDescription problem={problem} theme={theme} />
+          )}
         </div>
 
         <div className="col-12 col-lg-7 position-relative h-100 d-flex flex-column bg-dark">
@@ -144,22 +357,43 @@ export default function ProblemWorkspacePage({ problem, onExitWorkspace }) {
               onChange={setCode}
               theme={theme}
               language={language}
-              onRunCode={handleRunCode}
-              onSubmitCode={handleSubmitCode}
+              onRunCode={() => executeCode("RUN")}
+              onSubmitCode={() => executeCode("SUBMIT")}
             />
           </div>
 
           {showTestCases && (
             <div
-              className={`border-top transition-all d-flex flex-column ${theme === "vs-dark" ? "border-secondary bg-dark text-light" : "border-light bg-light text-dark"}`}
+              className={`border-top transition-all d-flex flex-column ${
+                isDark
+                  ? "border-secondary bg-dark text-light"
+                  : "border-light bg-light text-dark"
+              }`}
               style={{ height: "45%", zIndex: 10 }}
             >
               <div className="d-flex justify-content-between align-items-center px-4 py-2 border-bottom border-secondary border-opacity-10 bg-black bg-opacity-10">
-                <span className="fw-bold small font-monospace text-uppercase tracking-wider">
-                  <i className="fa-solid fa-terminal me-2 text-primary"></i>
-                  Console Kết quả {currentAction === "RUN" ? "Chạy Thử" : `Nộp Bài (${output?.passCount || 0}/${output?.totalTestCases || 0} Passed)`}
-                </span>
-                <button className="btn btn-sm text-muted hover-text-white border-0 text-decoration-none" onClick={() => setShowTestCases(false)}>
+                <div className="d-flex align-items-center gap-3">
+                  <span className="fw-bold small font-monospace text-uppercase tracking-wider">
+                    <i className="fa-solid fa-terminal me-2 text-primary"></i>
+                    Console Kết quả{" "}
+                    {currentAction === "RUN"
+                      ? `Chạy Thử (${output?.passCount ?? testCasesList.filter(t=>t.isPassed).length}/${testCasesList.length} Passed)`
+                      : `Nộp Bài (${output?.passCount ?? testCasesList.filter(t=>t.isPassed).length}/${testCasesList.length} Passed)`}
+                  </span>
+
+                  {/* ⏱️ THỜI GIAN THỰC THI BIÊN DỊCH Ở HEADER CONSOLE */}
+                  {output && (output.executionTime || output.duration) && (
+                    <span className="badge bg-secondary bg-opacity-25 text-info border border-info border-opacity-25 font-monospace fw-normal">
+                      <i className="fa-regular fa-clock me-1"></i>
+                      {output.executionTime || output.duration}
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  className="btn btn-sm text-muted hover-text-white border-0 text-decoration-none"
+                  onClick={() => setShowTestCases(false)}
+                >
                   <i className="fa-solid fa-xmark"></i> Đóng
                 </button>
               </div>
@@ -167,140 +401,143 @@ export default function ProblemWorkspacePage({ problem, onExitWorkspace }) {
               <div className="flex-grow-1 overflow-hidden d-flex flex-column p-3">
                 {isCompiling ? (
                   <div className="d-flex align-items-center gap-2 text-warning font-monospace p-2 small">
-                    <div className="spinner-border spinner-border-sm text-warning" role="status"></div>
+                    <div
+                      className="spinner-border spinner-border-sm text-warning"
+                      role="status"
+                    ></div>
                     <span>Hệ thống đang thực thi mã nguồn của bạn, vui lòng đợi...</span>
                   </div>
                 ) : output ? (
                   <div className="d-flex flex-column h-100 overflow-hidden font-monospace">
-                    
-                    {(output.status === "Error" || output.status === "Compile Error") && (
+                    {["Error", "Compile Error", "Time Limit Exceeded", "Execution Error"].includes(
+                      output.status
+                    ) ? (
                       <div className="d-flex flex-column gap-2 w-100 overflow-y-auto pe-2">
-                        <h4 className="text-danger fw-bold mb-1" style={{ fontSize: "20px" }}>Compilation error :(</h4>
-                        <div className="text-muted small mb-2">Check the compiler output, fix the error and try again.</div>
-                        <div className={`p-3 rounded border text-danger fw-bold ${theme === "vs-dark" ? "bg-black border-secondary" : "bg-light border-light"}`}>
-                          <pre className="m-0 text-wrap" style={{ whiteSpace: "pre-wrap" }}>{output.message || output.output || "Lỗi biên dịch cấu trúc code."}</pre>
-                        </div>
+                        <h4
+                          className="text-danger fw-bold mb-1"
+                          style={{ fontSize: "18px" }}
+                        >
+                          {output.status === "Time Limit Exceeded"
+                            ? "Time Limit Exceeded (TLE)"
+                            : "Compilation / System Error"}
+                        </h4>
+                        <OutputBox
+                          content={
+                            output.message ||
+                            output.actualOutput ||
+                            output.output ||
+                            "Lỗi cú pháp hoặc biên dịch."
+                          }
+                          theme={theme}
+                          variant="danger"
+                        />
                       </div>
-                    )}
-
-                    {output.status !== "Error" && output.status !== "Compile Error" && (
-                      currentAction === "RUN" ? (
-                        <>
-                          {output.status === "Success" && output.isCorrect && (
-                            <div className="mb-2 p-2 rounded bg-success bg-opacity-10 border border-success border-opacity-25">
-                              <h5 className="text-success fw-bold m-0" style={{ fontSize: "15px" }}>Congratulations!</h5>
-                              <p className="text-muted m-0 mt-1" style={{ fontSize: "12px" }}>You have passed the sample test cases. Click the submit button to run your code against all the test cases.</p>
-                            </div>
-                          )}
-
-                          <div className="d-flex flex-grow-1 overflow-hidden gap-3">
-                            <div className="d-flex flex-column gap-2" style={{ width: "200px" }}>
-                              <button className={`btn btn-sm text-start py-2 px-3 rounded border-0 ${theme === "vs-dark" ? "bg-secondary bg-opacity-25 text-white" : "bg-primary bg-opacity-10 text-primary fw-bold"}`}>
-                                <i className={`fa-solid me-2 ${output.isCorrect ? "fa-circle-check text-success" : "fa-circle-xmark text-danger"}`}></i>
-                                Sample Case 0
-                              </button>
-                            </div>
-
-                            <div className="flex-grow-1 overflow-y-auto pe-2 d-flex flex-column gap-2" style={{ fontSize: "13px" }}>
-                              <div>
-                                <div className="text-muted small mb-1">Input (stdin)</div>
-                                <pre className={`p-2 rounded border m-0 ${theme === "vs-dark" ? "bg-black border-secondary text-light" : "bg-white border-light"}`}>{output.testCaseInput || "No input"}</pre>
-                              </div>
-                              <div>
-                                <div className="text-muted small mb-1">Your Output</div>
-                                <pre className={`p-2 rounded border m-0 fw-bold ${output.isCorrect ? "text-success" : "text-danger"} ${theme === "vs-dark" ? "bg-black border-secondary" : "bg-white border-light"}`}>{output.actualOutput || "Rỗng (No output)"}</pre>
-                              </div>
-                              <div>
-                                <div className="text-muted small mb-1">Expected Output</div>
-                                <pre className={`p-2 rounded border m-0 ${theme === "vs-dark" ? "bg-black border-secondary text-light" : "bg-white border-light"}`}>{output.expectedOutput || "No expected data"}</pre>
-                              </div>
-                            </div>
+                    ) : (
+                      <>
+                        {output.isCorrect || output.status === "Accepted" ? (
+                          <div className="mb-3 p-2 px-3 rounded bg-success bg-opacity-10 border border-success border-opacity-25">
+                            <h5
+                              className="text-success fw-bold m-0"
+                              style={{ fontSize: "14px" }}
+                            >
+                              Congratulations!
+                            </h5>
+                            <p
+                              className="text-muted m-0 mt-1"
+                              style={{ fontSize: "12px" }}
+                            >
+                              Bạn đã vượt qua tất cả {testCasesList.length} test cases!
+                            </p>
                           </div>
-                        </>
-                      ) : (
-                        /* 🌟 GIAO DIỆN PHÂN TAB SUBMIT THEO ĐÚNG ẢNH MẪU CỦA BẠN */
-                        <div className="d-flex flex-grow-1 overflow-hidden gap-3 h-100">
-                          
-                          {/* MENU CỘT BÊN TRÁI: Động hóa danh sách Test Cases */}
-                          <div className="d-flex flex-column gap-1 overflow-y-auto pe-1" style={{ width: "200px", minWidth: "170px" }}>
-                            {output.testCaseDetails?.map((tc, index) => (
-                              <button
-                                key={index}
-                                className={`btn btn-sm text-start py-2 px-3 rounded border-0 d-flex align-items-center gap-2 ${
-                                  activeTab === index 
-                                    ? (theme === "vs-dark" ? "bg-secondary bg-opacity-25 text-white fw-bold" : "bg-primary bg-opacity-10 text-primary fw-bold")
-                                    : "text-muted bg-transparent"
-                                }`}
-                                onClick={() => setActiveTab(index)}
-                              >
-                                <i className={`fa-solid ${tc.isPassed ? "fa-circle-check text-success" : "fa-circle-xmark text-danger"}`}></i>
-                                <span style={{ fontSize: "14px" }}>{tc.name}</span>
-                              </button>
-                            ))}
+                        ) : (
+                          <div className="mb-3 p-2 px-3 rounded bg-danger bg-opacity-10 border border-danger border-opacity-25">
+                            <h5
+                              className="text-danger fw-bold m-0"
+                              style={{ fontSize: "14px" }}
+                            >
+                              Wrong Answer
+                            </h5>
+                            <p
+                              className="text-muted m-0 mt-1"
+                              style={{ fontSize: "12px" }}
+                            >
+                              Đã hoàn thành {output?.passCount ?? testCasesList.filter(t=>t.isPassed).length}/{testCasesList.length} test cases.
+                            </p>
                           </div>
+                        )}
 
-                          {/* KHUNG NỘI DUNG CHI TIẾT BÊN PHẢI (Thay đổi theo tab được click chọn) */}
-                          <div className="flex-grow-1 overflow-y-auto pe-2 d-flex flex-column gap-3" style={{ fontSize: "13px" }}>
-                            {output.testCaseDetails && output.testCaseDetails[activeTab] && (() => {
-                              const currentTC = output.testCaseDetails[activeTab];
+                        <div className="d-flex flex-grow-1 overflow-hidden gap-3">
+                          {/* TAB LỰA CHỌN CÁC TEST CASES */}
+                          <div
+                            className="d-flex flex-column gap-1 overflow-y-auto pe-1"
+                            style={{ width: "210px", minWidth: "180px" }}
+                          >
+                            {testCasesList.map((tc, index) => {
+                              const isPassed = tc.isPassed || tc.Is_passed || tc.status === "Passed";
                               return (
-                                <>
-                                  {/* 1. Trạng thái Compiler Message */}
-                                  <div>
-                                    <div className="text-muted small mb-1">Compiler Message</div>
-                                    <div className={`fw-bold fs-5 ${currentTC.isPassed ? "text-success" : "text-danger"}`}>
-                                      {currentTC.isPassed ? "Success" : (currentTC.status === "Error" ? "Runtime Error / TLE" : "Wrong Answer")}
-                                    </div>
-                                    {currentTC.errorMessage && (
-                                      <pre className="text-danger mt-1 bg-black bg-opacity-25 p-2 rounded small">{currentTC.errorMessage}</pre>
-                                    )}
+                                <button
+                                  key={index}
+                                  className={`btn btn-sm text-start py-2 px-3 rounded border-0 d-flex align-items-center justify-content-between ${
+                                    activeTab === index
+                                      ? isDark
+                                        ? "bg-secondary bg-opacity-25 text-white fw-bold"
+                                        : "bg-primary bg-opacity-10 text-primary fw-bold"
+                                      : "text-muted bg-transparent"
+                                  }`}
+                                  onClick={() => setActiveTab(index)}
+                                >
+                                  <div className="d-flex align-items-center gap-2">
+                                    <i
+                                      className={`fa-solid ${
+                                        isPassed
+                                          ? "fa-circle-check text-success"
+                                          : "fa-circle-xmark text-danger"
+                                      }`}
+                                    ></i>
+                                    <span style={{ fontSize: "13px" }}>
+                                      {tc.name}
+                                    </span>
                                   </div>
-
-                                  {/* 2. Khung Input (stdin) */}
-                                  <div>
-                                    <div className="text-muted small mb-1 d-flex justify-content-between align-items-center">
-                                      <span>Input (stdin)</span>
-                                      <span className="text-primary cursor-pointer small opacity-75 hover-opacity-100" style={{ cursor: "pointer" }}><i className="fa-solid fa-download me-1"></i>Download</span>
-                                    </div>
-                                    <pre className={`p-2 rounded border m-0 fw-bold ${theme === "vs-dark" ? "bg-black border-secondary border-opacity-25 text-light" : "bg-white border-light text-dark"}`}>
-                                      {currentTC.input || "No input data"}
-                                    </pre>
-                                  </div>
-
-                                  {/* 3. Khung Expected Output */}
-                                  <div>
-                                    <div className="text-muted small mb-1 d-flex justify-content-between align-items-center">
-                                      <span>Expected Output</span>
-                                      <span className="text-primary cursor-pointer small opacity-75 hover-opacity-100" style={{ cursor: "pointer" }}><i className="fa-solid fa-download me-1"></i>Download</span>
-                                    </div>
-                                    <pre className={`p-2 rounded border m-0 fw-bold ${theme === "vs-dark" ? "bg-black border-secondary border-opacity-25 text-light" : "bg-white border-light text-dark"}`}>
-                                      {currentTC.expectedOutput || "No expected data"}
-                                    </pre>
-                                  </div>
-
-                                  {/* 4. Khung Your Output (Thêm vào để học sinh dễ đối chiếu khi sai) */}
-                                  <div>
-                                    <div className="text-muted small mb-1">Your Output</div>
-                                    <pre className={`p-2 rounded border m-0 fw-bold ${theme === "vs-dark" ? "bg-black border-secondary border-opacity-25" : "bg-white border-light"} ${currentTC.isPassed ? "text-success" : "text-danger"}`}>
-                                      {currentTC.actualOutput || "Rỗng (No output)"}
-                                    </pre>
-                                  </div>
-                                </>
+                                  {tc.isHidden && (
+                                    <i className="fa-solid fa-lock text-muted small" title="Hidden Test Case"></i>
+                                  )}
+                                </button>
                               );
-                            })()}
+                            })}
                           </div>
 
+                          {/* CHI TIẾT TEST CASE */}
+                          {currentTestCase && (
+                            <TestCaseDetailView
+                              tc={currentTestCase}
+                              activeTab={activeTab}
+                              theme={theme}
+                              onDownload={handleDownload}
+                            />
+                          )}
                         </div>
-                      )
+                      </>
                     )}
                   </div>
                 ) : (
-                  <div className="text-muted font-monospace small p-2">Vui lòng bấm nút Run Code hoặc Submit để kiểm tra kết quả bài làm.</div>
+                  <div className="text-muted font-monospace small p-2">
+                    Vui lòng bấm nút Run Code hoặc Submit để kiểm tra kết quả bài làm.
+                  </div>
                 )}
               </div>
             </div>
           )}
-          {showAI && <AIAssistantPopup onClose={() => setShowAI(false)} />}
+
+          {showAI && (
+            <AIAssistantPopup
+              onClose={() => setShowAI(false)}
+              hasRunCode={hasRunCode}
+              code={code}
+              output={output}
+              language={language}
+              problemContext={problem}
+            />
+          )}
         </div>
       </div>
     </div>

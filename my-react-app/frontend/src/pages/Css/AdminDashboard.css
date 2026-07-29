@@ -1,0 +1,202 @@
+/* ==========================================================================
+   1. RESET & PHÁ KHUNG HỆ THỐNG (Khắc phục hoàn toàn lỗi 2 thanh scrollbar)
+   ========================================================================== */
+html, 
+body, 
+#root {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    background-color: #fcfcfd !important;
+    
+    /* 🌟 FIX SCROLLBAR: Trả về trạng thái tự nhiên, không ép auto bừa bãi gây thanh cuộn đôi */
+    height: auto !important;
+    overflow: visible !important; 
+}
+
+/* Khung bọc giao diện tổng */
+.admin-dashboard-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh;
+    display: block;
+}
+
+#root {
+    display: block !important;
+    max-width: none !important;
+}
+
+/* Khung layout tổng */
+.admin-layout-container {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    /* Cho phép thanh cuộn tổng của trình duyệt hoạt động tự nhiên */
+    overflow: visible !important; 
+}
+
+/* ==========================================================================
+   2. SỬA LỖI VỠ NỘI DUNG BIỂU ĐỒ VÀ TRIỆT TIÊU THANH CUỘN PHỤ BÊN PHẢI
+   ========================================================================== */
+.admin-main-content {
+    flex: 1;
+    /* 🌟 ĐỒNG BỘ: Đẩy margin trái đúng bằng chiều rộng thực tế của Sidebar (250px) */
+    margin-left: 250px; 
+    min-height: 100vh;
+    
+    /* 🌟 FIX SCROLLBAR: Tuyệt đối không cho phép khung nội dung này tự sinh thanh cuộn riêng */
+    height: auto !important;
+    overflow: visible !important; 
+}
+
+/* Class bọc ngoài các Tab để ép nội dung không bị dồn cục */
+.tab-content-container {
+    width: 100%;
+    padding: 1.5rem; /* Tạo khoảng đệm an toàn xung quanh nội dung */
+    box-sizing: border-box;
+    overflow: visible !important;
+}
+
+/* ==========================================================================
+   3. CSS RIÊNG CHO SIDEBAR THEO STYLE MỚI (HÌNH 2)
+   ========================================================================== */
+.sb-sidebar {
+    width: 250px;
+    min-width: 250px;
+    height: 100vh;
+    background-color: #ffffff;
+    border-right: 1px solid #f2f4f7;
+    display: flex;
+    flex-direction: column;
+    
+    /* 🌟 CỐ ĐỊNH SIDEBAR: Sử dụng fixed để sidebar đứng yên độc lập khi page cuộn dọc */
+    position: fixed; 
+    top: 0;
+    left: 0;
+    z-index: 1020;
+}
+
+/* Khung Profile Studio trên đầu */
+.sb-header-box {
+    padding: 1.25rem 1rem;
+    border-bottom: 1px solid #f2f4f7;
+    margin-bottom: 1rem;
+}
+
+.sb-studio-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #f2f4f7;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.sb-logo-wrapper {
+    width: 32px;
+    height: 32px;
+    background-color: #0b4a4f; /* Màu xanh đậm của Fikri Studio */
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.sb-studio-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1d2939;
+    margin: 0;
+}
+
+/* Danh sách Menu */
+.sb-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0 0.75rem;
+    flex-grow: 1;
+}
+
+/* Button Menu chung */
+.sb-item-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: #667085; /* Màu xám chữ tinh tế của hình 2 */
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.sb-item-btn:hover {
+    background-color: #f9fafb;
+    color: #344054;
+}
+
+/* Trạng thái Tab đang Active */
+.sb-item-btn.sb-active {
+    background-color: #e6f6f4; /* Nền xanh mint mờ */
+    color: #0c9488; /* Màu chữ xanh mint đậm */
+    font-weight: 600;
+}
+
+/* Khối Dropdown con */
+.sb-submenu-box {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding-left: 2.25rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.sb-sub-btn {
+    background: transparent;
+    border: none;
+    color: #667085;
+    font-size: 13px;
+    padding: 0.4rem 0.5rem;
+    text-align: left;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.sb-sub-btn:hover, .sb-sub-btn.sb-active {
+    color: #0c9488;
+    font-weight: 500;
+}
+
+/* Icon static hoặc ảnh từ assets */
+.sb-icon-img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    margin-right: 0.75rem;
+}
+
+/* Footer đáy Sidebar */
+.sb-footer {
+    padding: 1rem 0.75rem;
+    border-top: 1px solid #f2f4f7;
+}
+
+/* Các tiện ích nhỏ */
+.custom-table th, .custom-table td { padding-top: 1.1rem !important; padding-bottom: 1.1rem !important; vertical-align: middle !important; border-color: #f1f5f9 !important; }
+.cursor-pointer { cursor: pointer !important; }
+.rotate-180 { transform: rotate(180deg) !important; }

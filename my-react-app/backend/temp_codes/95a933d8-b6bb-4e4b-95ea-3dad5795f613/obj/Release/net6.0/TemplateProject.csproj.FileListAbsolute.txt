@@ -1,0 +1,15 @@
+/app/bin/TemplateProject
+/app/bin/TemplateProject.deps.json
+/app/bin/TemplateProject.runtimeconfig.json
+/app/bin/TemplateProject.dll
+/app/bin/TemplateProject.pdb
+/app/obj/Release/net6.0/TemplateProject.csproj.AssemblyReference.cache
+/app/obj/Release/net6.0/TemplateProject.GeneratedMSBuildEditorConfig.editorconfig
+/app/obj/Release/net6.0/TemplateProject.AssemblyInfoInputs.cache
+/app/obj/Release/net6.0/TemplateProject.AssemblyInfo.cs
+/app/obj/Release/net6.0/TemplateProject.csproj.CoreCompileInputs.cache
+/app/obj/Release/net6.0/TemplateProject.dll
+/app/obj/Release/net6.0/refint/TemplateProject.dll
+/app/obj/Release/net6.0/TemplateProject.pdb
+/app/obj/Release/net6.0/TemplateProject.genruntimeconfig.cache
+/app/obj/Release/net6.0/ref/TemplateProject.dll
