@@ -45,8 +45,11 @@ export default function Sidebar({ activeTab, setActiveTab, onLogout }) {
           </span>
         </button>
 
-        {/* 2. Inbox (Tĩnh) */}
-        <button className="sb-item-btn">
+        {/* 2. Inbox */}
+        <button
+          onClick={() => setActiveTab("inbox")}
+          className={`sb-item-btn ${activeTab === "inbox" ? "sb-active" : ""}`}
+        >
           <span className="d-flex align-items-center">
             <img src={InboxIcon} className="sb-icon-img" alt="Inbox" />
             Inbox

@@ -278,8 +278,6 @@ export default function ProblemModal({ show, initialData, onClose, onSave }) {
                 </div>
               </div>
               {/* 2. Thiết lập AI Prompt */}
-              Dưới đây là đoạn code chuẩn sạch, căn chỉnh chuẩn class Bootstrap
-              và thụt lùi thẻ html gọn gàng cho khu vực này: JavaScript
               <h6 className="fw-bold text-success mb-3">
                 2. Thiết lập Trợ lý AI (Gemini Custom Prompt)
               </h6>

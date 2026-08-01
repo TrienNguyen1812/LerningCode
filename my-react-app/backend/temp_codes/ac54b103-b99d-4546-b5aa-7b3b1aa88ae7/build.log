@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  Restored /app/TemplateProject.csproj (in 390 ms).
+/app/Solution.cs(14,58): error CS1503: Argument 2: cannot convert from 'out int' to 'out double' [/app/TemplateProject.csproj]
+/app/Solution.cs(15,58): error CS1503: Argument 2: cannot convert from 'out int' to 'out double' [/app/TemplateProject.csproj]
+
+Build FAILED.
+
+/app/Solution.cs(14,58): error CS1503: Argument 2: cannot convert from 'out int' to 'out double' [/app/TemplateProject.csproj]
+/app/Solution.cs(15,58): error CS1503: Argument 2: cannot convert from 'out int' to 'out double' [/app/TemplateProject.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:22.88

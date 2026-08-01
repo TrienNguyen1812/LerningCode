@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  Restored /app/TemplateProject.csproj (in 161 ms).
+/app/Solution.cs(17,16): error CS0023: Operator '!' cannot be applied to operand of type 'string' [/app/TemplateProject.csproj]
+/app/Solution.cs(17,27): error CS0023: Operator '!' cannot be applied to operand of type 'string' [/app/TemplateProject.csproj]
+
+Build FAILED.
+
+/app/Solution.cs(17,16): error CS0023: Operator '!' cannot be applied to operand of type 'string' [/app/TemplateProject.csproj]
+/app/Solution.cs(17,27): error CS0023: Operator '!' cannot be applied to operand of type 'string' [/app/TemplateProject.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:10.66

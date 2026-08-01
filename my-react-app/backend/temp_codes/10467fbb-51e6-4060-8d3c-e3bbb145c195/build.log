@@ -1,0 +1,21 @@
+  Determining projects to restore...
+  Restored /app/TemplateProject.csproj (in 182 ms).
+/app/Solution.cs(17,54): error CS0103: The name 'NumberStyles' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(17,72): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(18,54): error CS0103: The name 'NumberStyles' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(18,72): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(31,49): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(32,49): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+
+Build FAILED.
+
+/app/Solution.cs(17,54): error CS0103: The name 'NumberStyles' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(17,72): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(18,54): error CS0103: The name 'NumberStyles' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(18,72): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(31,49): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(32,49): error CS0103: The name 'CultureInfo' does not exist in the current context [/app/TemplateProject.csproj]
+    0 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:00:28.32

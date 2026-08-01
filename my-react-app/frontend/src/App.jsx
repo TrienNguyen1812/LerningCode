@@ -6,7 +6,6 @@ import Register from './pages/Register';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard'; 
 import CreateCoursePage from './pages/Admin/CreateCoursePage';
-import CourseDetail from './pages/Admin/CourseDetail'; // 🌟 Import lại CourseDetail
 
 import './App.css';
 

@@ -8,6 +8,7 @@ import {
   FaPaperclip,
   FaDownload,
   FaTriangleExclamation,
+  FaCircleCheck,
 } from "react-icons/fa6";
 
 export default function CourseDetailPage({
@@ -17,7 +18,7 @@ export default function CourseDetailPage({
   onBack,
 }) {
   const routeParams = useParams();
-  
+
   // Xử lý Lấy ID khóa học linh hoạt từ Props hoặc Route Params
   const courseId =
     propCourseId ||
@@ -458,6 +459,18 @@ export default function CourseDetailPage({
                         const difficulty =
                           realProb.difficulty || realProb.Difficulty || "Thông thường";
 
+                        // ✅ KIỂM TRA TRẠNG THÁI ĐÃ GIẢI QUYẾT (Đã sửa logic Boolean hợp lệ)
+                        const isSolved = Boolean(
+                          prob.isSolved ||
+                          prob.IsSolved ||
+                          prob.isPassed ||
+                          prob.IsPassed ||
+                          prob.status === "Solved" ||
+                          prob.status === "Passed" ||
+                          realProb.isSolved ||
+                          realProb.IsSolved
+                        );
+
                         return (
                           <div
                             key={probId}
@@ -474,13 +487,24 @@ export default function CourseDetailPage({
                                 </span>
                               </small>
                             </div>
-                            <button
-                              className="btn btn-sm text-white rounded-2 px-3 py-1.5 fw-semibold"
-                              style={{ backgroundColor: "#00bba7" }}
-                              onClick={() => onStartCoding && onStartCoding(realProb)}
-                            >
-                              Làm bài ngay
-                            </button>
+
+                            {/* NÚT THAY ĐỔI THEO TRẠNG THÁI */}
+                            {isSolved ? (
+                              <button
+                                className="btn btn-sm btn-success rounded-2 px-3 py-1.5 fw-semibold d-flex align-items-center gap-1"
+                                onClick={() => onStartCoding && onStartCoding(realProb)}
+                              >
+                                <FaCircleCheck size={14} /> Đã giải quyết
+                              </button>
+                            ) : (
+                              <button
+                                className="btn btn-sm text-white rounded-2 px-3 py-1.5 fw-semibold"
+                                style={{ backgroundColor: "#00bba7" }}
+                                onClick={() => onStartCoding && onStartCoding(realProb)}
+                              >
+                                Làm bài ngay
+                              </button>
+                            )}
                           </div>
                         );
                       })}

@@ -13,6 +13,7 @@ import CourseManagement from "../Admin/CourseManagement";
 import FilesManagement from "../Admin/FileManagement";
 import CourseDetail from "./CourseDetail";
 import ProblemManager from "./ProblemManagement";
+import AiInboxAnalyticsPage from "../Admin/AiInboxAnalyticsPage"; // 👈 1. IMPORT INBOX PAGE
 
 // IMPORT FILE CSS 
 import "../css/AdminDashboard.css";
@@ -22,12 +23,11 @@ import "@fortawesome/fontawesome-free/css/all.min.css";
 export default function AdminDashboard({ onLogout, overrideTab }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { courseId: urlCourseId } = useParams(); // 🌟 Lấy courseId từ đường dẫn URL (/admin/courses/:courseId)
+  const { courseId: urlCourseId } = useParams();
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedCourseId, setSelectedCourseId] = useState(null);
 
-  // State lưu trữ dữ liệu từ API cho các tab khác
   const [dashboardData, setDashboardData] = useState(null);
   const [instructorsData, setInstructorsData] = useState([]);
   const [studentsData, setStudentsData] = useState([]);
@@ -37,18 +37,19 @@ export default function AdminDashboard({ onLogout, overrideTab }) {
 
   const BASE_URL = "http://127.0.0.1:5000/api/admin";
 
-  //  Lắng nghe thay đổi đường dẫn URL hoặc URL Params để cập nhật Active Tab
+  // Lắng nghe thay đổi đường dẫn URL
   useEffect(() => {
     const path = location.pathname;
 
     if (urlCourseId || overrideTab === "course-detail" || path.includes("/admin/courses/")) {
-      // Ưu tiên đọc ID từ URL params, nếu không có lấy từ path
       const extractedId = urlCourseId || path.split("/").pop();
       setSelectedCourseId(extractedId);
       setActiveTab("course-detail");
     } else if (path.includes("/admin/courses")) {
       setActiveTab("courses");
       setSelectedCourseId(null);
+    } else if (path.includes("/admin/inbox")) { // 👈 2. XỬ LÝ PATH INBOX
+      setActiveTab("inbox");
     } else if (path.includes("/admin/files")) {
       setActiveTab("files");
     } else if (path.includes("/admin/instructors")) {
@@ -60,7 +61,7 @@ export default function AdminDashboard({ onLogout, overrideTab }) {
     }
   }, [location.pathname, urlCourseId, overrideTab]);
 
-  // Đổ dữ liệu ban đầu cho các tab hệ thống
+  // Đổ dữ liệu ban đầu
   useEffect(() => {
     fetch(`${BASE_URL}/dashboard`)
       .then((res) => (res.ok ? res.json() : null))
@@ -78,32 +79,25 @@ export default function AdminDashboard({ onLogout, overrideTab }) {
       .catch((err) => console.warn("Lỗi fetch students:", err));
   }, []);
 
-  //  Hàm chuyển sang trang Chi tiết khóa học
   const handleOpenCourseDetail = (courseId) => {
-    if (!courseId) {
-      console.error("⚠️ Không tìm thấy courseId để mở!");
-      return;
-    }
+    if (!courseId) return;
     setSelectedCourseId(courseId);
     setActiveTab("course-detail");
     navigate(`/admin/courses/${courseId}`);
   };
 
-  //  Hàm quay lại danh sách Khóa học
   const handleBackToCourses = () => {
     setSelectedCourseId(null);
     setActiveTab("courses");
     navigate("/admin");
   };
 
-  //  Hàm xử lý khi bấm Tab ở Sidebar
   const handleSidebarTabChange = (tab) => {
     setActiveTab(tab);
     if (tab !== "course-detail") {
       setSelectedCourseId(null);
     }
 
-    // Điều hướng Route tương ứng
     if (tab === "dashboard") navigate("/admin");
     else if (tab === "courses") navigate("/admin");
     else navigate(`/admin/${tab}`);
@@ -117,7 +111,6 @@ export default function AdminDashboard({ onLogout, overrideTab }) {
     <div className="admin-dashboard-wrapper">
       <div className="admin-layout-container">
         
-        {/* Sidebar giữ nguyên bên trái */}
         <Sidebar
           activeTab={activeTab}
           setActiveTab={handleSidebarTabChange}
@@ -133,6 +126,9 @@ export default function AdminDashboard({ onLogout, overrideTab }) {
             {activeTab === "dashboard" && (
               <DashboardTab dashboardData={dashboardData} />
             )}
+
+            {/* 💡 3. RENDER TAB INBOX */}
+            {activeTab === "inbox" && <AiInboxAnalyticsPage />}
 
             {/* Danh sách Khóa học */}
             {activeTab === "courses" && (

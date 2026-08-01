@@ -18,12 +18,14 @@ const authRoutes = require("./src/routes/auth");
 const adminRoutes = require("./src/routes/admin");
 const studentRoutes = require("./src/routes/student");
 const problemRoutes = require("./src/routes/judge.route"); // Tuyến đường compiler chuyên biệt
-const submissionRoutes = require("./src/routes/submission");
+const submissionRoutes = require("./src/routes/submission.route");
 const courseRoute = require("./src/routes/course.route");
 const fileRoute = require("./src/routes/file.route");
 const lessonRoute = require("./src/routes/lesson.route");
 const systemFileRoute = require("./src/routes/systemFile.route");
 const problemRoute = require('./src/routes/problem.route');
+const studentStatsRoutes = require("./src/routes/studentStats.route");
+const statisticsRoutes = require("./src/routes/statistics.route");
 
 // Đăng ký sử dụng các Routes với tiền tố prefix chuẩn RESTful
 app.use("/api/auth", authRoutes);       // Ví dụ: /api/auth/login
@@ -36,6 +38,8 @@ app.use("/api/files", fileRoute);
 app.use("/api", lessonRoute);
 app.use("/api/system-files", systemFileRoute);
 app.use('/api/problems', problemRoute);
+app.use("/api/stats", studentStatsRoutes);
+app.use("/api/statistics", statisticsRoutes);
 
 // Khởi chạy máy chủ
 const PORT = process.env.PORT || 5000;

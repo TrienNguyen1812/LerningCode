@@ -1,0 +1,13 @@
+  Determining projects to restore...
+  Restored /app/TemplateProject.csproj (in 162 ms).
+/app/Solution.cs(19,44): error CS0103: The name 'a' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(19,54): error CS0103: The name 'b' does not exist in the current context [/app/TemplateProject.csproj]
+
+Build FAILED.
+
+/app/Solution.cs(19,44): error CS0103: The name 'a' does not exist in the current context [/app/TemplateProject.csproj]
+/app/Solution.cs(19,54): error CS0103: The name 'b' does not exist in the current context [/app/TemplateProject.csproj]
+    0 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:16.05

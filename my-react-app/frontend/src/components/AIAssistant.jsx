@@ -8,7 +8,7 @@ export default function AIAssistantPopup({
   language = "csharp",
   output = null,
 }) {
-  // 🎯 Thêm State quản lý Hint Level (Mặc định Level 1)
+  // 🎯 State quản lý Hint Level (Mặc định Level 1)
   const [hintLevel, setHintLevel] = useState(1);
 
   // Mô tả ngắn gọn cho từng Level
@@ -30,6 +30,17 @@ export default function AIAssistantPopup({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  // 💡 Hàm helper lấy thông tin user hiện tại từ LocalStorage key "currentUser"
+  const getCurrentUser = () => {
+    try {
+      const userRaw = localStorage.getItem("currentUser");
+      return userRaw ? JSON.parse(userRaw) : null;
+    } catch (error) {
+      console.error("Lỗi parse currentUser từ LocalStorage:", error);
+      return null;
+    }
+  };
 
   // Tự động cuộn xuống cuối khung chat
   useEffect(() => {
@@ -80,18 +91,29 @@ export default function AIAssistantPopup({
       // 3. Trích xuất testCaseDetails (nếu có từ console output)
       const testCaseDetails = output?.testCaseDetails || output?.results || [];
 
-      // 4. Gửi payload đầy đủ lên Backend API
+      // 🌟 4. LẤY THÔNG TIN USER TỪ LOCALSTORAGE ("currentUser")
+      const currentUser = getCurrentUser();
+      const idUser = currentUser?.id || currentUser?.idUser || currentUser?.userId || 1;
+      const isAdmin = currentUser?.role === "ADMIN" || currentUser?.role === "TEACHER" || Boolean(currentUser?.isAdmin);
+
+      // 🌟 5. LẤY ID SUBMISSION TỪ OUTPUT (Nếu người dùng vừa Submit bài thành công)
+      const idSubmission = output?.idSubmission || output?.id_submission || output?.id || null;
+
+      // 6. Gửi payload đầy đủ lên Backend API
       const response = await fetch("http://localhost:5000/api/judges/ai-feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idProblem: problemId,
+          idUser: Number(idUser),               // 👈 Gửi đúng idUser
+          idProblem: Number(problemId),
           studentCode: code || "",
           language: language,
           question: userQuery,
           lastConsoleOutput: formattedOutput,
-          currentHintLevel: hintLevel, // 👈 Đã bổ sung truyền Hint Level
-          testCaseDetails: testCaseDetails, // 👈 Bổ sung truyền dữ liệu Test Cases chi tiết
+          currentHintLevel: hintLevel,
+          testCaseDetails: testCaseDetails,
+          isAdmin: isAdmin,                     // 👈 Gửi trạng thái Admin
+          idSubmission: idSubmission ? Number(idSubmission) : null, // 👈 Gửi idSubmission để lưu AI_FEEDBACK
         }),
       });
 

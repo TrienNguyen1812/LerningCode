@@ -1,6 +1,5 @@
 // controllers/ai.controller.js
-const sql = require("mssql");
-const db = require("../config/db"); // File kết nối SQL Server
+const { sql, poolPromise } = require("../config/db"); // Tương thích chuẩn với db.js của bạn
 const problemRepository = require("../repositories/problem.repository");
 
 // Import SDK Google Gen AI
@@ -18,6 +17,14 @@ const ENABLE_MOCK_AI = false;
 class AiController {
   constructor() {
     this.getAiFeedback = this.getAiFeedback.bind(this);
+    this.explainScore = this.explainScore.bind(this);
+  }
+
+  /**
+   * Helper lấy ConnectionPool chuẩn từ db.js
+   */
+  async _getDbPool() {
+    return await poolPromise;
   }
 
   /**
@@ -28,7 +35,6 @@ class AiController {
       throw new Error("Chưa cấu hình GEMINI_API_KEY hoặc GEMINI_API_KEYS trong file .env!");
     }
 
-    // KHÔNG THAY ĐỔI: Giữ nguyên danh sách model theo đúng cấu hình của bạn
     const MODELS = ["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"];
     let lastError = null;
 
@@ -78,8 +84,9 @@ class AiController {
       question,
       lastConsoleOutput,
       currentHintLevel = 1,
-      isAdmin = false, // 👈 Cờ Admin từ Frontend
-      testCaseDetails = [], // 👈 Bổ sung nhận danh sách Test Cases thực tế từ Client
+      isAdmin = false,
+      testCaseDetails = [],
+      idSubmission = null, // Nhận idSubmission nếu Client có truyền lên
     } = req.body;
 
     if (!studentCode || !studentCode.trim()) {
@@ -90,7 +97,7 @@ class AiController {
     }
 
     try {
-      console.log(`[AI CONTROLLER] User ${idUser} (isAdmin: ${isAdmin}) yêu cầu Hint Level ${currentHintLevel} cho bài tập ID: ${idProblem}`);
+      console.log(`[AI CONTROLLER] User ${idUser} yêu cầu Hint Level ${currentHintLevel} cho bài tập ID: ${idProblem}`);
 
       let problemTitle = "Chưa xác định";
       let customInstruction = "Không có hướng dẫn bổ sung.";
@@ -136,7 +143,7 @@ QUY TẮC PHÂN TÍCH QUAN TRỌNG:
 3. Hướng dẫn ngắn gọn, tiết kiệm từ ngữ, sử dụng Markdown gạch đầu dòng.
 
 QUY TẮC TỪ CHỐI (TỐI ĐA 1 CÂU):
-1. Đòi code/đáp án full -> Trả lời: "Rất tiếc, hệ thống không thể cung cấp lời giải hoặc code hoàn chỉnh. Bạn vui lòng tự lập trình hoặc hỏi về tư duy/lỗi code nhé!"
+1. Đòi code/đáp án full -> Trả lời: "Rất tiếc, hệ thống không thể cung cấp lời giải hoặc code hoàn chỉnh. Bạn vui lòng tự lập trình hoặc hỏi về tư tư duy/lỗi code nhé!"
 2. Hỏi ngoài lề -> Trả lời: "Hệ thống chỉ hỗ trợ giải đáp các thắc mắc liên quan đến bài tập và lập trình. Bạn vui lòng tập trung vào đề bài nhé!"
 
 QUY TẮC ĐỊNH DẠNG PHẢN HỒI (BẮT BUỘC):
@@ -145,7 +152,7 @@ QUY TẮC ĐỊNH DẠNG PHẢN HỒI (BẮT BUỘC):
 - NỔI BẬT LỖI: Dùng inline code \`dòng_code_lỗi\` hoặc bold **[TÊN LỖI]** để chỉ rõ vị trí và logic bị sai.
 - Tuyệt đối KHÔNG xuất ra bất kỳ file/khối code hoàn chỉnh nào có thể copy-paste nộp bài.`;
 
-      // 3. Cấu trúc lại Prompt để gửi đầy đủ bối cảnh cho AI
+      // 3. Cấu trúc lại Prompt gửi cho Gemini
       const prompt = `
 [THÔNG TIN BÀI TẬP]
 - Đề bài: ${problemTitle}
@@ -188,15 +195,29 @@ ${
       }
 
       // =========================================================================
-      // 💾 LƯU LỊCH SỬ HINT VÀO DB (TỰ ĐỘNG BỎ QUA NẾU LÀ ADMIN HOẶC ID USER <= 1)
+      // 💾 LƯU LỊCH SỬ HINT VÀ AI_FEEDBACK VÀO DATABASE
       // =========================================================================
-      const isTestOrAdmin = Boolean(isAdmin) || Number(idUser) <= 1;
 
-      if (!isTestOrAdmin && idProblem) {
-        await this._saveHintToDb(Number(idUser), Number(idProblem), currentHintLevel, cleanReply);
-      } else {
-        console.log(`[AI DB] Bỏ qua lưu DB do Admin/Test Mode (isAdmin: ${isAdmin}, idUser: ${idUser})`);
+      // 1. Lưu vào HINT_USAGE nếu có idUser và idProblem
+      if (idUser && idProblem) {
+        await this._saveHintToDb(
+          Number(idUser),
+          Number(idProblem),
+          Number(currentHintLevel),
+          cleanReply,
+          idSubmission
+        );
       }
+
+      // 2. Ghi phản hồi vào bảng AI_FEEDBACK (Lưu ngay cả khi idSubmission là null)
+      await this._saveAiFeedbackToDb({
+        analysisContent: cleanReply,
+        suggestion: question || `Gợi ý cấp độ Level ${currentHintLevel}`,
+        modelName: "gemini-2.5-flash-lite",
+        idSubmission: idSubmission ? Number(idSubmission) : null,
+        idUser: idUser ? Number(idUser) : null,
+        idProblem: idProblem ? Number(idProblem) : null,
+      });
 
       return res.json({
         success: true,
@@ -223,27 +244,249 @@ ${
   }
 
   /**
-   * Hàm lưu vết lịch sử Hint vào HINT_USAGE
-   * (Đã bỏ phần tính điểm/chấm điểm tiến trình)
+   * 🌟 GIẢI THÍCH ĐIỂM SỐ SAU KHI NỘP BÀI (SUBMIT)
    */
-  async _saveHintToDb(idUser, idProblem, hintLevel, replyContent) {
+  async explainScore(req, res) {
+    const {
+      idUser = null,
+      idProblem,
+      studentCode,
+      language = "C#",
+      submissionResult,
+      idSubmission = null,
+    } = req.body;
+
+    if (!submissionResult) {
+      return res.status(400).json({
+        success: false,
+        message: "Thiếu thông tin kết quả chấm bài (submissionResult)!",
+      });
+    }
+
     try {
-      const pool = await (db.connect ? db.connect() : db);
-      const request = pool.request ? pool.request() : new sql.Request();
+      let problemTitle = "Chưa xác định";
+      try {
+        if (idProblem && problemRepository && problemRepository.findById) {
+          const problem = await problemRepository.findById(idProblem);
+          if (problem) {
+            problemTitle = problem.Title || problem.title || problemTitle;
+          }
+        }
+      } catch (dbErr) {
+        console.warn("[AI WARN] Không thể lấy thông tin bài tập từ DB:", dbErr.message);
+      }
+
+      const { scores = {}, testCaseDetails = [], status = "Unknown" } = submissionResult;
+
+      // Lọc ra các Test Case bị trượt để AI đối chiếu
+      let testCaseSummary = "Tất cả test cases đều PASSED thành công.";
+      const failedCases = testCaseDetails.filter((tc) => !tc.isPassed);
+
+      if (failedCases.length > 0) {
+        testCaseSummary = failedCases
+          .map(
+            (tc, idx) => `- Test case thất bại #${idx + 1}:
+  + Đầu vào (Input): "${tc.input ?? ""}"
+  + Kết quả mong đợi (Expected): "${tc.expectedOutput ?? ""}"
+  + Kết quả thực tế bài làm (Actual): "${tc.actualOutput ?? ""}"
+  + Lỗi/Mô tả: ${tc.errorMessage || "Sai kết quả đầu ra (Wrong Answer)"}`
+          )
+          .join("\n");
+      }
+
+      const systemInstruction = `Bạn là Giảng viên Lập trình AI đánh giá kết quả bài nộp của sinh viên.
+Nhiệm vụ: Phân tích và giải thích chi tiết TẠI SAO sinh viên lại nhận được mức điểm này dựa trên kết quả hệ thống đã chấm.
+
+QUY TẮC ĐỊNH DẠNG BẮT BUỘC:
+- Trả lời bằng tiếng Việt, ngắn gọn, súc tích, dạng gạch đầu dòng Markdown.
+- Bóc tách dựa trên các chỉ số:
+  + Correctness Score (Độ chính xác)
+  + Reliability Score (Độ tin cậy & Lỗi chạy)
+  + Code Quality Score (Chất lượng code & Compiler warning)
+- Chỉ ra nguyên nhân trực tiếp dẫn đến trừ điểm ở các Test Case bị FAILED.
+- Đưa ra 1-2 hướng khắc phục tư duy ngắn gọn (KHÔNG cung cấp toàn bộ đoạn code giải hoàn chỉnh).`;
+
+      const prompt = `
+[THÔNG TIN BÀI TẬP]
+- Tên bài tập: ${problemTitle}
+- Ngôn ngữ: ${language}
+
+[MÃ NGUỒN SINH VIÊN NỘP]
+\`\`\`${language.toLowerCase()}
+${studentCode || "Không có code"}
+\`\`\`
+
+[BẢNG ĐIỂM HỆ THỐNG CUNG CẤP]
+- Trạng thái bài nộp: ${status}
+- ĐIỂM TỔNG KẾT (FINAL SCORE): ${scores.finalScore ?? 0} / 10
+- Điểm Correctness (80%): ${scores.correctnessScore ?? 0} / 100
+- Điểm Reliability (10%): ${scores.reliabilityScore ?? 0} / 100
+- Điểm Code Quality (10%): ${scores.codeQualityScore ?? 0} / 100
+- Số lần dùng Hint/Gợi ý: ${scores.usedHintCount ?? 0} lần
+
+[CHI TIẾT TEST CASES BỊ FAILED]
+${testCaseSummary}
+
+Hãy giải thích rõ cho sinh viên vì sao lại đạt ${scores.finalScore ?? 0}/10 điểm và đưa ra hướng cải thiện!
+`;
+
+      let cleanReply = "";
+
+      if (ENABLE_MOCK_AI) {
+        cleanReply = `[MOCK EXPLAIN SCORE]\n- Bài làm đạt ${scores.finalScore}/10 điểm.\n- Lý do: Bị trượt một số testcase biên.`;
+      } else {
+        cleanReply = await this._callGeminiWithKeyRotation(prompt, systemInstruction);
+      }
+
+      // Tự động lưu phân tích điểm vào bảng AI_FEEDBACK
+      const targetSubmissionId = idSubmission || submissionResult.idSubmission || submissionResult.id;
+      
+      await this._saveAiFeedbackToDb({
+        analysisContent: cleanReply,
+        suggestion: `Giải thích điểm số (${scores.finalScore ?? 0}/10)`,
+        modelName: "gemini-2.5-flash-lite",
+        idSubmission: targetSubmissionId ? Number(targetSubmissionId) : null,
+        idUser: idUser ? Number(idUser) : null,
+        idProblem: idProblem ? Number(idProblem) : null,
+      });
+
+      return res.json({
+        success: true,
+        explanation: cleanReply,
+      });
+    } catch (error) {
+      console.error("[AI EXPLAIN SCORE ERROR]:", error);
+
+      if (error.status === 429 || (error.message && error.message.includes("quota"))) {
+        return res.status(200).json({
+          success: true,
+          explanation:
+            "Hệ thống AI hiện đang quá tải lượt truy cập. Bạn vui lòng đợi khoảng 15–30 giây rồi bấm thử lại nhé!",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: "Lỗi kết nối tới AI khi giải thích điểm số!",
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Hàm lưu vết lịch sử Hint vào HINT_USAGE
+   * Cấu trúc bảng SQL Server: IdUser, IdProblem, IdSubmission, HintContent, CreatedDate
+   */
+  async _saveHintToDb(idUser, idProblem, hintLevel, replyContent, idSubmission = null) {
+    try {
+      const pool = await this._getDbPool();
+      const request = new sql.Request(pool);
+
+      const formattedHintContent = `[Hint Level ${hintLevel}]\n${replyContent}`;
 
       request.input("idUser", sql.Int, idUser);
       request.input("idProblem", sql.Int, idProblem);
-      request.input("hintContent", sql.NVarChar, `[Hint Level ${hintLevel}] ${replyContent}`);
+      request.input("idSubmission", sql.Int, idSubmission ? Number(idSubmission) : null);
+      request.input("hintContent", sql.NVarChar, formattedHintContent);
 
-      // Chỉ lưu vết lịch sử gợi ý
       await request.query(`
-        INSERT INTO HINT_USAGE (IdUser, IdProblem, HintContent, CreatedDate) 
-        VALUES (@idUser, @idProblem, @hintContent, GETDATE())
+        INSERT INTO HINT_USAGE (IdUser, IdProblem, IdSubmission, HintContent, CreatedDate) 
+        VALUES (@idUser, @idProblem, @idSubmission, @hintContent, GETDATE())
       `);
 
-      console.log(`[AI DB] Đã ghi lịch sử Hint Level ${hintLevel} vào HINT_USAGE cho User ${idUser}!`);
+      console.log(`[AI DB SUCCESS] Đã ghi lịch sử Hint Level ${hintLevel} vào HINT_USAGE cho User ${idUser}!`);
     } catch (dbSaveErr) {
-      console.error("[AI DB ERROR] Lỗi khi lưu vết Hint vào DB:", dbSaveErr.message);
+      console.error("[AI DB ERROR] Lỗi khi lưu vết Hint vào HINT_USAGE:", dbSaveErr.message);
+    }
+  }
+
+  /**
+   * Ghi dữ liệu vào bảng AI_FEEDBACK
+   * Đã hỗ trợ ghi nhận ngay cả khi idSubmission = null (lưu IdUser & IdProblem)
+   */
+  async _saveAiFeedbackToDb({
+    analysisContent,
+    suggestion = "",
+    modelName = "gemini-2.5-flash-lite",
+    promptToken = 0,
+    completionToken = 0,
+    idSubmission = null,
+    idUser = null,
+    idProblem = null,
+  }) {
+    try {
+      const pool = await this._getDbPool();
+      const request = new sql.Request(pool);
+
+      request.input("analysisContent", sql.NVarChar, analysisContent || "");
+      request.input("suggestion", sql.NVarChar, suggestion || "");
+      request.input("modelName", sql.VarChar, modelName);
+      request.input("promptToken", sql.Int, promptToken);
+      request.input("completionToken", sql.Int, completionToken);
+      request.input("idSubmission", sql.Int, idSubmission ? Number(idSubmission) : null);
+      request.input("idUser", sql.Int, idUser ? Number(idUser) : null);
+      request.input("idProblem", sql.Int, idProblem ? Number(idProblem) : null);
+
+      await request.query(`
+        INSERT INTO AI_FEEDBACK (Analysis_content, Suggestion, Model_name, Prompt_token, Completion_token, CreatedDate, IdSubmission, IdUser, IdProblem)
+        VALUES (@analysisContent, @suggestion, @modelName, @promptToken, @completionToken, GETDATE(), @idSubmission, @idUser, @idProblem)
+      `);
+
+      console.log(`[AI DB SUCCESS] Đã lưu thành công 1 bản ghi vào AI_FEEDBACK! (User: ${idUser}, Problem: ${idProblem}, Submission: ${idSubmission})`);
+    } catch (dbErr) {
+      console.error("[AI DB ERROR] Lỗi khi lưu vào AI_FEEDBACK:", dbErr.message);
+    }
+  }
+
+  /**
+   * HÀM ĐÁNH GIÁ CHẤT LƯỢNG CODE (Được gọi trực tiếp từ submissionService)
+   */
+  async evaluateCodeQuality(codeContent, language = "C#", compileWarningCount = 0) {
+    try {
+      const systemInstruction = "Bạn là một chuyên gia Review Code trong hệ thống chấm bài tự động. Nhiệm vụ của bạn là đánh giá chất lượng mã nguồn và trả về JSON chuẩn.";
+
+      const prompt = `
+Hãy đánh giá chất lượng mã nguồn (Code Quality) dưới đây viết bằng ngôn ngữ ${language} trên thang điểm từ 0 đến 100.
+
+CÁC TIÊU CHÍ ĐÁNH GIÁ (Thang điểm 100):
+1. Warning nghiêm trọng: Code có tiềm ẩn lỗi nguy hiểm hoặc có cảnh báo compiler không? (Số warning phát hiện: ${compileWarningCount})
+2. Naming Convention: Cách đặt tên biến, tên hàm có rõ nghĩa và theo đúng quy ước của ${language} không? (tránh tên biến vô nghĩa như a, b, c1, x2...)
+3. Code Duplication: Có bị lặp code thừa thãi không?
+4. Function Organization & Structure: Tổ chức hàm có hợp lý, tối ưu, modular không?
+5. Readability & Clean Code: Code có dễ đọc, định dạng sạch sẽ, thụt lề chuẩn không?
+
+MÃ NGUỒN CẦN ĐÁNH GIÁ:
+\`\`\`${language.toLowerCase()}
+${codeContent}
+\`\`\`
+
+YÊU CẦU ĐẦU RA (BẮT BUỘC CHỈ TRẢ VỀ DẠNG JSON NÀY, KHÔNG CHỨA KHỐI MARKDOWN CODEBLOCK, KHÔNG CHỨA CHỮ NGOÀI JSON):
+{
+  "score": <số nguyên từ 0 đến 100>,
+  "feedback": "<Nhận xét ngắn gọn 1-2 câu bằng tiếng Việt chỉ ra điểm tốt và điểm cần cải thiện>"
+}
+`;
+
+      if (ENABLE_MOCK_AI) {
+        return { score: 85, feedback: "[MOCK] Code trình bày khá ổn và rõ ràng." };
+      }
+
+      const aiResponseText = await this._callGeminiWithKeyRotation(prompt, systemInstruction);
+
+      const cleanJsonString = aiResponseText.replace(/```json/g, "").replace(/```/g, "").trim();
+      const parsedData = JSON.parse(cleanJsonString);
+
+      return {
+        score: Math.min(100, Math.max(0, parsedData.score ?? 80)),
+        feedback: parsedData.feedback || "Code trình bày khá ổn.",
+      };
+    } catch (error) {
+      console.error("⚠️ Lỗi AI Code Quality (ai.controller):", error.message);
+      const fallbackScore = Math.max(0, 100 - compileWarningCount * 10);
+      return {
+        score: fallbackScore,
+        feedback: "Chưa thể phân tích chi tiết bằng AI.",
+      };
     }
   }
 }

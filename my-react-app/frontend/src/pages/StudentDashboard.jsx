@@ -19,6 +19,9 @@ export default function StudentDashboard({ currentUser, onLogout }) {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedProblem, setSelectedProblem] = useState(null);
 
+  // Thêm state này để ép StudentStats tải lại API ngay sau khi nộp bài xong
+  const [refreshStatsTrigger, setRefreshStatsTrigger] = useState(0);
+
   const [myCourses, setMyCourses] = useState([]);
   const [assignmentDeadlines, setAssignmentDeadlines] = useState([]);
 
@@ -27,14 +30,15 @@ export default function StudentDashboard({ currentUser, onLogout }) {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!currentUser || !currentUser.id) return;
+      const userId = currentUser?.id || currentUser?.IdUser;
+      if (!userId) return;
 
       try {
         setIsLoading(true);
         setError(null);
 
         const response = await fetch(
-          `http://localhost:5000/api/students/${currentUser.id}/dashboard`
+          `http://localhost:5000/api/students/${userId}/dashboard`
         );
 
         if (!response.ok) {
@@ -61,7 +65,11 @@ export default function StudentDashboard({ currentUser, onLogout }) {
     return (
       <ProblemWorkspacePage
         problem={selectedProblem}
-        onExitWorkspace={() => setSelectedProblem(null)}
+        onExitWorkspace={() => {
+          setSelectedProblem(null);
+          // Tăng trigger lên 1 để ép StudentStats gọi lại API thống kê mới nhất
+          setRefreshStatsTrigger((prev) => prev + 1);
+        }}
       />
     );
   }
@@ -98,7 +106,8 @@ export default function StudentDashboard({ currentUser, onLogout }) {
                 className="btn btn-sm btn-outline-secondary rounded-pill px-3 mb-3 d-flex align-items-center gap-2 fw-semibold"
                 onClick={() => setSelectedCourse(null)}
               >
-                <i className="fa-solid fa-arrow-left-long"></i> Quay lại Dashboard
+                <i className="fa-solid fa-arrow-left-long"></i> Quay lại
+                Dashboard
               </button>
 
               <CourseDetailPage
@@ -111,12 +120,19 @@ export default function StudentDashboard({ currentUser, onLogout }) {
             <>
               {/* 1. Welcome Banner */}
               <WelcomeBanner
-                name={currentUser?.fullName || currentUser?.FullName || "Trịnh Triển Nguyên"}
+                name={
+                  currentUser?.fullName ||
+                  currentUser?.FullName ||
+                  "Trịnh Triển Nguyên"
+                }
               />
 
-              {/* 2. Your Statistic - DÀN HÀNG NGANG TRỌN CHIỀU RỘNG (100% WIDTH) */}
+              {/* 2. Your Statistic - TRUYỀN REFRESH TRIGGER VÀO DƯỚI */}
               <div className="mb-4">
-                <StudentStats />
+                <StudentStats
+                  currentUser={currentUser}
+                  refreshKey={refreshStatsTrigger}
+                />
               </div>
 
               {/* 3. LƯỚI BÊN DƯỚI: ASSIGNED ITEMS (TRÁI) & SUMMARY + GROUP (PHẢI) */}
@@ -124,7 +140,9 @@ export default function StudentDashboard({ currentUser, onLogout }) {
                 {/* CỘT TRÁI (8 CỘT): Assigned Items */}
                 <div className="col-12 col-xl-8">
                   <div className="d-flex justify-content-between align-items-center mb-3">
-                    <h6 className="fw-bold text-dark m-0 fs-5">Assigned Items</h6>
+                    <h6 className="fw-bold text-dark m-0 fs-5">
+                      Assigned Items
+                    </h6>
                     <button
                       className="btn btn-link text-primary p-0 text-decoration-none border-0 bg-transparent fw-semibold"
                       style={{ fontSize: "13px" }}
@@ -156,7 +174,7 @@ export default function StudentDashboard({ currentUser, onLogout }) {
                   )}
                 </div>
 
-                {/* CỘT PHẢI (4 CỘT): Learning Item Summary & My Group (Ngang hàng với Assigned Items) */}
+                {/* CỘT PHẢI (4 CỘT): Learning Item Summary & My Group */}
                 <div className="col-12 col-xl-4">
                   <RightSidebarPanel />
                 </div>

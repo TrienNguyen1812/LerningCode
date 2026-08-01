@@ -93,7 +93,7 @@ class CSharpStrategy extends BaseStrategy {
         execFile(
           "docker",
           dockerArgs,
-          { timeout: 30000, maxBuffer: 10 * 1024 * 1024 }, // Timeout 30s
+          { timeout: 45000, maxBuffer: 10 * 1024 * 1024 }, // Timeout 45s
           (error, stdout, stderr) => {
             const duration = ((Date.now() - startTime) / 1000).toFixed(2);
 
