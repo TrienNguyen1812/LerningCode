@@ -6,56 +6,80 @@ const aiController = require("../controllers/ai.controller");
 
 /**
  * =========================================================================
- * BỘ SO KHỚP TỔNG HỢP (ÁP DỤNG ĐỦ 4 THUẬT TOÁN ĐÃ THẢO LUẬN)
- * 1. Chuẩn hóa Văn bản (Text Normalization)
- * 2. Lọc Dòng Rỗng (Empty Line Filtering)
- * 3. Thu gọn Token / Space (Tokenizer & Space Collapse)
- * 4. Sai số Số thực (Floating-Point Error)
+ * BỘ SO KHỚP TỰ ĐỘNG (AUTO-DETECT DATA TYPE)
+ * Không cần tham số testType! Tự động xử lý:
+ * 1. Chuẩn hóa Văn bản (Normalize, trim, newline, lowerCase)
+ * 2. So sánh Chuỗi / Văn bản thuần túy
+ * 3. Ép kiểu & Tính Sai số Số thực thuần túy (Floating-Point Error)
+ * 4. Bóc tách & So sánh Sai số Số thực trong Chuỗi hỗn hợp Chữ + Số
  * =========================================================================
  */
-function evaluateOutput(actualRaw, expectedRaw, testType = 'EXACT', tolerance = 0.0001) {
+function evaluateOutput(actualRaw, expectedRaw, tolerance = 0.0001) {
   if (actualRaw === null || actualRaw === undefined) return false;
   if (expectedRaw === null || expectedRaw === undefined) return false;
 
-  // BƯỚC 1: ÁP DỤNG 3 THUẬT TOÁN XỬ LÝ CHUỖI & DÒNG
+  // BƯỚC 1: CHUẨN HÓA VĂN BẢN (Text Normalization)
   const normalizePipeline = (rawText) => {
     return rawText
-      .replace(/\r\n/g, '\n')           // 1. Chuẩn hóa mọi ngắt dòng về \n
-      .split('\n')                      // Tách thành mảng các dòng
-      .map(line => line.trim())         // 2. Trim khoảng trắng thừa ở 2 đầu mỗi dòng
-      .filter(line => line.length > 0)  // 3. Lọc bỏ hoàn toàn các dòng rỗng
-      .join(' ')                        // Nối thành 1 chuỗi nằm trên cùng 1 dòng
-      .replace(/\s+/g, ' ')             // 4. Thu gọn nhiều space liên tiếp thành đúng 1 space (Tokenizer)
-      .toLowerCase();                   // 5. Hạ chữ thường
+      .toString()
+      .replace(/\r\n/g, '\n')           // 1. Chuẩn hóa ngắt dòng về \n
+      .split('\n')                      // Tách mảng theo dòng
+      .map(line => line.trim())         // 2. Trim 2 đầu từng dòng
+      .filter(line => line.length > 0)  // 3. Lọc dòng rỗng
+      .join(' ')                        // Nối dòng thành 1 chuỗi
+      .replace(/\s+/g, ' ')             // 4. Thu gọn nhiều khoảng trắng thừa
+      .toLowerCase();                   // 5. Chuyển về chữ thường
   };
 
   const cleanActual = normalizePipeline(actualRaw);
   const cleanExpected = normalizePipeline(expectedRaw);
 
-  // Nếu đã trùng khớp 100% sau khi chuẩn hóa văn bản -> Trả về TRUE ngay
+  // 🟢 TRƯỜNG HỢP 1: Khớp chuỗi 100% sau chuẩn hóa -> PASS
   if (cleanActual === cleanExpected) {
     return true;
   }
 
-  // BƯỚC 2: ÁP DỤNG THUẬT TOÁN SAI SỐ SỐ THỰC
-  // Kích hoạt khi TestType là bài toán số thực HOẶC khi cả 2 chuỗi đều parse ra được số
-  const isFloatType = testType === 'FLOAT_TOLERANCE' || testType === 'Số thực';
-  
-  if (isFloatType || (!isNaN(parseFloat(cleanActual)) && !isNaN(parseFloat(cleanExpected)))) {
-    const A = parseFloat(cleanActual);
-    const E = parseFloat(cleanExpected);
+  // 🟢 TRƯỜNG HỢP 2: Tự phát hiện Số thuần túy (Auto Floating-Point Error)
+  const actNum = Number(cleanActual);
+  const expNum = Number(cleanExpected);
 
-    if (!isNaN(A) && !isNaN(E)) {
-      const absError = Math.abs(A - E);
-      const combinedError = absError / Math.max(1.0, Math.abs(E));
+  if (!isNaN(actNum) && !isNaN(expNum) && cleanActual !== "" && cleanExpected !== "") {
+    const absError = Math.abs(actNum - expNum);
+    const combinedError = absError / Math.max(1.0, Math.abs(expNum));
 
-      // So sánh sai số kết hợp với ngưỡng cho phép
-      if (combinedError <= tolerance) {
-        return true;
-      }
+    if (combinedError <= tolerance) {
+      return true;
     }
   }
 
+  // 🟢 TRƯỜNG HỢP 3: Chuỗi hỗn hợp Chữ & Số (VD: "Ket qua: 3.14159" vs "Ket qua: 3.14")
+  const numberRegex = /-?\d+(?:\.\d+)?/g;
+  const actualNumbers = cleanActual.match(numberRegex);
+  const expectedNumbers = cleanExpected.match(numberRegex);
+
+  // Xóa phần số khỏi chuỗi để so sánh phần khung chữ
+  const actualTextOnly = cleanActual.replace(numberRegex, '');
+  const expectedTextOnly = cleanExpected.replace(numberRegex, '');
+
+  // Nếu phần chữ giống hệt nhau VÀ có cùng số lượng con số trong chuỗi
+  if (
+    actualTextOnly === expectedTextOnly &&
+    actualNumbers && expectedNumbers &&
+    actualNumbers.length === expectedNumbers.length
+  ) {
+    // So sánh từng cặp số tương ứng theo ngưỡng sai số
+    const allNumbersMatch = expectedNumbers.every((expStr, index) => {
+      const actN = parseFloat(actualNumbers[index]);
+      const expN = parseFloat(expStr);
+      const absErr = Math.abs(actN - expN);
+      const relErr = absErr / Math.max(1.0, Math.abs(expN));
+      return relErr <= tolerance;
+    });
+
+    if (allNumbersMatch) return true;
+  }
+
+  // 🔴 Nếu không khớp trường hợp nào -> Wrong Answer
   return false;
 }
 
@@ -101,8 +125,7 @@ class SubmissionService {
       const currentWeight = parseFloat(tc.Weight ?? tc.weight) || 1.0;
       const testCaseId = tc.IdTestCase ?? tc.idTestCase;
       
-      // Lấy TestType và Tolerance từ CSDL (nếu không có thì dùng mặc định)
-      const testType = tc.TestType ?? tc.testType ?? 'EXACT';
+      // Ngưỡng sai số mặc định (có thể lấy từ DB nếu cấu hình thêm)
       const tolerance = parseFloat(tc.Tolerance ?? tc.tolerance) || 0.0001;
 
       const result = await compilerStrategy.execute(codeContent, input);
@@ -150,9 +173,9 @@ class SubmissionService {
         hasRuntimeOrTimeoutError = true;
       } else {
         // =========================================================================
-        // 🌟 SỬ DỤNG HÀM SO KHỚP MỚI TẠI ĐÂY (THAY CHO ĐOẠN cleanActual === cleanExpected BỊ LỖI CŨ)
+        // 🌟 SỬ DỤNG HÀM SO KHỚP TỰ ĐỘNG (KHÔNG CẦN TESTTYPE)
         // =========================================================================
-        isPassed = evaluateOutput(actualOutput, expectedOut, testType, tolerance);
+        isPassed = evaluateOutput(actualOutput, expectedOut, tolerance);
 
         if (isPassed) {
           passCount++;
@@ -181,7 +204,7 @@ class SubmissionService {
     }
 
     // ==========================================
-    // 5. TÍNH CHỈ SỐ THEO ĐÚNG CÔNG THỨC YÊU CẦU
+    // 5. TÍNH CHỈ SỐ THEO ĐÚNG CÔNG THỨC
     // ==========================================
 
     // a. Correctness (0 - 100 điểm): Tính theo tổng trọng số test case vượt qua
@@ -204,7 +227,7 @@ class SubmissionService {
     }
     reliabilityScore = Math.max(0, reliabilityScore);
 
-    // c. Code Quality (0 - 100 điểm): Đánh giá bằng AI thông qua aiController
+    // c. Code Quality (0 - 100 điểm): Đánh giá bằng AI
     let codeQualityScore = 0;
     let aiFeedback = "";
 
@@ -262,7 +285,7 @@ class SubmissionService {
       isPassedAllTests
     );
 
-    // 7. Trả về Response cho Frontend React
+    // 7. Trả về Response cho Frontend
     return {
       idSubmission,
       status: finalStatus,
